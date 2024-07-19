@@ -9,26 +9,32 @@
             width: 100vw;
             height: 100vh;
         }
-        #toggle-button {
+        #controls {
             position: absolute;
             top: 10px;
             left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        button {
             padding: 10px 20px;
             background-color: rgba(255, 255, 255, 0.8);
             border: 1px solid #ccc;
             border-radius: 5px;
             cursor: pointer;
-            z-index: 1000;
             font-size: 16px;
             font-family: Arial, sans-serif;
         }
     </style>
 </head>
 <body>
-    <button id="toggle-button">Enable Geolocation</button>
-    <model-viewer id="gltf-viewer" src="path/to/your/model.gltf" alt="A 3D model" camera-controls ar>
-        <button slot="ar-button" id="ar-button">View in AR</button>
-    </model-viewer>
+    <div id="controls">
+        <button id="toggle-button">Enable Geolocation</button>
+        <button id="ar-button" slot="ar-button">View in AR</button>
+    </div>
+    <model-viewer id="gltf-viewer" src="path/to/your/model.gltf" alt="A 3D model" camera-controls ar></model-viewer>
 
     <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <script>
