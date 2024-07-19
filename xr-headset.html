@@ -2,18 +2,99 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>XR Minimodel with Headset</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <title>Model Viewer with Geolocation Toggle</title>
     <style>
         body { margin: 0; }
         model-viewer {
             width: 100vw;
             height: 100vh;
         }
+        #toggle-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
-    <model-viewer src="compressed.glb" alt="BIM MiniModel in XR Headset Mode " auto-rotate camera-controls ar ar-modes="webxr scene-viewer quick-look" xr-environment>
+    <button id="toggle-button">Enable Geolocation</button>
+    <model-viewer id="gltf-viewer" src="path/to/your/model.gltf" alt="A 3D model" camera-controls ar>
+        <button slot="ar-button" id="ar-button">View in AR</button>
     </model-viewer>
+
+    <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script>
+        // Reference coordinates for the model's origin
+        const referenceLatitude = 40.7128; // Example: New York City latitude
+        const referenceLongitude = -74.0060; // Example: New York City longitude
+
+        let geolocationEnabled = false;
+        
+        document.getElementById('toggle-button').addEventListener('click', toggleGeolocation);
+
+        function toggleGeolocation() {
+            geolocationEnabled = !geolocationEnabled;
+            document.getElementById('toggle-button').innerText = geolocationEnabled ? 'Disable Geolocation' : 'Enable Geolocation';
+            if (geolocationEnabled) {
+                positionModelAtUserLocation();
+            } else {
+                resetModelPosition();
+            }
+        }
+
+        // Get user's GPS coordinates
+        function getUserCoordinates() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const { latitude, longitude } = position.coords;
+                            resolve({ latitude, longitude });
+                        },
+                        error => {
+                            reject(error);
+                        }
+                    );
+                } else {
+                    reject(new Error('Geolocation is not supported by this browser.'));
+                }
+            });
+        }
+
+        // Convert GPS coordinates to model coordinates
+        function convertGPSToModelCoordinates(latitude, longitude) {
+            const scale = 1000; // Define an appropriate scale factor
+            const x = (longitude - referenceLongitude) * scale;
+            const z = (latitude - referenceLatitude) * scale;
+            return { x, z };
+        }
+
+        // Position the model based on user location
+        async function positionModelAtUserLocation() {
+            try {
+                const { latitude, longitude } = await getUserCoordinates();
+                const { x, z } = convertGPSToModelCoordinates(latitude, longitude);
+
+                // Access the model-viewer element
+                const modelViewer = document.getElementById('gltf-viewer');
+
+                // Update the model's position using the camera-target attribute
+                modelViewer.cameraTarget = `${x}m 0m ${z}m`;
+            } catch (error) {
+                console.error('Error getting user location:', error);
+            }
+        }
+
+        // Reset model position to the default view
+        function resetModelPosition() {
+            const modelViewer = document.getElementById('gltf-viewer');
+            modelViewer.cameraTarget = `0m 0m 0m`; // Reset to default position
+        }
+    </script>
 </body>
 </html>
