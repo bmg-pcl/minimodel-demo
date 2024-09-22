@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimort</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript" src="https://www.clarity.ms/tag/YOUR_CLARITY_PROJECT_ID"></script>
+
+    <!-- MSAL.js for Azure AD Authentication -->
+    <script src="https://alcdn.msauth.net/browser/2.19.0/js/msal-browser.min.js"></script>
+
+    <!-- PDF.js for PDF extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+
+    <!-- PapaParse for CSV file parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <style>
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            font-family: 'Barlow Condensed', sans-serif;
+            padding: 20px;
+        }
+
+        button, .drag-drop-area {
+            background-color: #1F1F1F;
+            color: #E0E0E0;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover, .drag-drop-area:hover {
+            background-color: #333;
+        }
+
+        .profile {
+            margin-top: 20px;
+        }
+
+        .profile p {
+            margin: 5px 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table, th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            color: #E0E0E0;
+        }
+
+        th {
+            background-color: #333;
+            font-weight: bold;
+        }
+
+        td {
+            background-color: #1F1F1F;
+            cursor: pointer;
+        }
+
+        #output {
+            margin-top: 20px;
+        }
+
+        #pdf-preview {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            border: 1px solid #333;
+            cursor: pointer;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        #highlight {
+            position: absolute;
+            background-color: rgba(255, 255, 0, 0.4);  /* Yellow transparent */
+            display: none;
+            transition: all 2s ease;
+        }
+
+        #loaded-file {
+            margin-top: 20px;
+        }
+
+        .drag-drop-area {
+            border: 2px dashed #333;
+            width: 300px;
+            height: 100px;
+            text-align: center;
+            line-height: 100px;
+            font-size: 16px;
+        }
+
+        .drag-drop-area.dragover {
+            background-color: #333;
+        }
+
+        #feedback-links {
+            margin-top: 20px;
+        }
+
+        #feedback-links a {
+            display: block;
+            color: #E0E0E0;
+            margin: 5px 0;
+            text-decoration: none;
+        }
+
+        #feedback-links a:hover {
+            color: #888;
+        }
+
+        #pattern-upload {
+            margin-top: 20px;
+        }
+
+        #pdf-options {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Mini-mortifier: PDF text extraction </h2>
+
+    A minimalist browser-based tool to deconstruct PDFs into text and comments. Check the results; different docs have different levels of data available. 
+        <br>
+    <!-- Login Button or User Profile -->
+    <div id="auth-container">
+        <button id="login-button" style="display: none;">Login with AD. </button>
+        <div id="user-profile" class="profile" style="display: none;">
+            <p>Welcome, <span id="user-name"></span></p>
+        </div>
+    </div>
+
+    <!-- PDF Upload and Extraction -->
+     <br>
+    1. Select a PDF file on your computer, and then choose to extract text or comments.
+   <br>
+    <input type="file" id="pdf-upload" />
+    <div class="drag-drop-area" id="drag-drop-area">Drag and Drop File Here</div>
+    <br><br>
+
+    2. Select an action to perform on the PDF:
+    <button id="extract-text" disabled>Extract Text</button>
+    <button id="extract-comments" disabled>Extract Comments</button>
+
+    <!-- Checkbox for sticky PDF preview -->
+    <div id="pdf-options">
+        <input type="checkbox" id="sticky-preview" />
+        <label for="sticky-preview">Preview PDF</label>
+    </div>
+
+    <br>
+    3. Add filters (optional):
+    <br> 
+    <h4>Filter by text (regex):</h4>
+    <input type="text" id="filter-pattern" placeholder="Enter regex pattern" />
+    <button id="apply-filter">Apply Filter</button>
+
+    <!-- Pattern file upload -->
+    <div id="pattern-upload">
+        <h4>Upload Pattern File (CSV with Regex Pattern, Pattern Name):</h4>
+        <input type="file" id="pattern-upload-input" />
+    </div>
+
+    <h2>Extracted Data</h2>
+    <div id="output"></div>
+    
+    <!-- Display PDF preview -->
+    <canvas id="pdf-preview"></canvas>
+
+    <!-- Feedback Links -->
+    <div id="feedback-links">
+        <h3>Feedback and Comments: Select one.</h3>
+        <a href="mailto:comments@pcl.com?subject=Helped">This helped me</a>
+        <a href="mailto:comments@pcl.com?subject=Didn't work">This didn't work for me</a>
+        <a href="mailto:comments@pcl.com?subject=Suggestion">Suggestions</a>
+    </div>
+
+    <!-- Highlight for selected text/comment on PDF -->
+    <div id="highlight"></div>
+
+    <!-- Loaded file and SHA-256 hash -->
+    <div id="loaded-file"></div>
+
+    <script>
+        // Configurable parameters
+        const previewScale = 0.5;  // 2x larger than the default 1/4 size
+
+        // MSAL.js configuration for Azure AD authentication
+        const msalConfig = {
+            auth: {
+                clientId: "YOUR_CLIENT_ID",  // Replace with your Azure AD Application (Client) ID
+                authority: "https://login.microsoftonline.com/YOUR_TENANT_ID",  // Replace with your Tenant ID
+                redirectUri: window.location.origin  // The same URI you registered in Azure AD
+            }
+        };
+
+        const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+        let loggedInUser = "(unknown)"; // Fallback for the username
+        let patterns = []; // Holds patterns from CSV
+
+        // Automatically login the user if they are already authenticated
+        async function checkAuth() {
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length > 0) {
+                // User is already logged in, display profile
+                const account = accounts[0];
+                const userName = account.name || "No Name";
+                loggedInUser = userName;
+
+                // Update UI to show user profile
+                document.getElementById('login-button').style.display = 'none';
+                document.getElementById('user-profile').style.display = 'block';
+                document.getElementById('user-name').textContent = userName;
+            } else {
+                // Automatically try to log in using a popup
+                try {
+                    await msalInstance.loginPopup({
+                        scopes: ["User.Read"]
+                    });
+                    checkAuth(); // Check again after login
+                } catch (error) {
+                    console.error("Error during automatic login: ", error);
+                }
+            }
+        }
+
+        // Call checkAuth to attempt automatic login on page load
+        checkAuth();
+
+        // Add event listener to the login button
+        document.getElementById('login-button').addEventListener('click', async function () {
+            try {
+                await msalInstance.loginPopup({
+                    scopes: ["User.Read"]
+                });
+                checkAuth();
+            } catch (error) {
+                console.error("Error during login: ", error);
+            }
+        });
+
+        // Drag and drop area for file uploads
+        const dragDropArea = document.getElementById('drag-drop-area');
+        dragDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.add('dragover');
+        });
+        dragDropArea.addEventListener('dragleave', () => {
+            dragDropArea.classList.remove('dragover');
+        });
+        dragDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            handleFileUpload(file);
+        });
+
+        // PDF.js text and comment extraction with SHA-256 calculation
+        let pdf;
+        let filename;
+        let textData = [];
+        let commentData = [];
+        let currentExtraction = "text";  // Track which extraction is active
+
+        // Enable buttons once file is uploaded
+        document.getElementById('pdf-upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            handleFileUpload(file);
+        });
+
+        async function handleFileUpload(file) {
+            if (!file) {
+                console.log("No file selected.");
+                return;
+            }
+
+            filename = file.name;
+            console.log("File selected: " + filename);
+
+            // Calculate SHA-256 hash
+            const arrayBuffer = await file.arrayBuffer();
+            const hash = await sha256(arrayBuffer);
+            const truncatedHash = hash.slice(0, 16);  // Truncate to 8 bytes (16 characters)
+
+            // Get the current timestamp
+            const timestamp = new Date().toLocaleString();
+
+            // Get the user's public IP address (via a simple API)
+            const ipResponse = await fetch('https://api64.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            const ipAddress = ipData.ip;
+
+            // Print log
+            console.log(`Timestamp: ${timestamp}, IP: ${ipAddress}, Username: ${loggedInUser}, SHA-256: ${truncatedHash}`);
+            document.getElementById('loaded-file').textContent = `Loaded file ${filename}. Timestamp: ${timestamp}. IP: ${ipAddress}. Username: ${loggedInUser}. SHA-256: ${truncatedHash}`;
+
+            // Load PDF using PDF.js
+            pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            console.log("PDF loaded successfully");
+
+            // Enable the extract buttons after PDF loads
+            document.getElementById('extract-text').disabled = false;
+            document.getElementById('extract-comments').disabled = false;
+
+            // Show PDF preview (first page)
+            const canvas = document.getElementById('pdf-preview');
+            const context = canvas.getContext('2d');
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: previewScale });  // Scale to configured size
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            page.render({ canvasContext: context, viewport: viewport });
+
+            // Open full PDF in new tab when preview is clicked
+            canvas.addEventListener('click', function() {
+                const pdfDataUrl = URL.createObjectURL(new Blob([arrayBuffer], { type: 'application/pdf' }));
+                window.open(pdfDataUrl, '_blank');
+            });
+        }
+
+        // SHA-256 hash calculation function
+        async function sha256(buffer) {
+            const digest = await crypto.subtle.digest('SHA-256', buffer);
+            return Array.from(new Uint8Array(digest))
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        // Function to render plain text table
+        function renderTable(data) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = '';  // Clear previous output
+
+            if (data.length === 0) {
+                outputDiv.innerHTML = '<p>No data to display</p>';
+                return;
+            }
+
+            let table = '<table><tr>';
+            Object.keys(data[0]).forEach(key => {
+                table += `<th>${key}</th>`;
+            });
+            table += '</tr>';
+
+            data.forEach((row, index) => {
+                table += `<tr data-x="${row['X Loc']}" data-y="${row['Y Loc']}" data-xsize="${row['X Size']}" data-ysize="${row['Y Size']}">`;
+                Object.values(row).forEach(value => {
+                    table += `<td>${value}</td>`;
+                });
+                table += '</tr>';
+            });
+
+            table += '</table>';
+            outputDiv.innerHTML = table;
+
+            // Add click listener to highlight rows on PDF preview
+            document.querySelectorAll('#output tr').forEach((row, index) => {
+                row.addEventListener('click', function () {
+                    console.log(`Event: Row ${index + 1} clicked`);
+                    highlightText(row.dataset.x, row.dataset.y, row.dataset.xsize, row.dataset.ysize);
+                });
+            });
+        }
+
+        // Function to highlight text box in the PDF preview
+        function highlightText(x, y, xSize, ySize) {
+            const canvas = document.getElementById('pdf-preview');
+            const previewRect = canvas.getBoundingClientRect();
+
+            // Convert PDF coordinates to canvas preview coordinates
+            let left = parseFloat(x) * previewScale;
+            let top = canvas.height - (parseFloat(y) * previewScale) - (parseFloat(ySize) * previewScale);
+            let width = parseFloat(xSize) * previewScale;
+            let height = parseFloat(ySize) * previewScale;
+
+            console.log(`Highlighting at left: ${left}, top: ${top}, width: ${width}, height: ${height}`);
+
+            const highlight = document.getElementById('highlight');
+            highlight.style.left = `${canvas.offsetLeft + left - width * 2}px`;  // Start 4x larger
+            highlight.style.top = `${canvas.offsetTop + top - height * 2}px`;    // Start 4x larger
+            highlight.style.width = `${width * 4}px`;                           // Start 4x larger
+            highlight.style.height = `${height * 4}px`;                         // Start 4x larger
+            highlight.style.display = 'block';
+            highlight.style.opacity = '1';
+
+            // Narrow down the highlight to the correct size over 2 seconds
+            setTimeout(() => {
+                highlight.style.left = `${canvas.offsetLeft + left}px`;
+                highlight.style.top = `${canvas.offsetTop + top}px`;
+                highlight.style.width = `${width}px`;
+                highlight.style.height = `${height}px`;
+            }, 50);  // Small delay to allow starting animation
+
+            // Fade out the highlight after 2 seconds
+            setTimeout(() => {
+                highlight.style.opacity = '0';
+                setTimeout(() => {
+                    highlight.style.display = 'none';
+                }, 1000);  // Delay hide until fade out completes
+            }, 2000);
+        }
+
+        // Sticky PDF preview option
+        const stickyPreviewCheckbox = document.getElementById('sticky-preview');
+        stickyPreviewCheckbox.addEventListener('change', function() {
+            const pdfPreview = document.getElementById('pdf-preview');
+            if (this.checked) {
+                pdfPreview.style.position = 'fixed';
+                pdfPreview.style.top = '20px';  // Ensure it's not cut off
+                pdfPreview.style.boxShadow = '5px 5px 15px rgba(0, 0, 0, 0.5)';
+            } else {
+                pdfPreview.style.position = 'absolute';
+                pdfPreview.style.top = 'initial';
+                pdfPreview.style.boxShadow = 'none';
+            }
+        });
+
+        // Extract text when "Extract Text" button is clicked
+        document.getElementById('extract-text').addEventListener('click', async function() {
+            if (!pdf) {
+                console.log("PDF is not loaded.");
+                return;
+            }
+
+            textData = [];
+            let rowNumber = 1;
+            console.log("Starting text extraction");
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                try {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+
+                    textContent.items.forEach((item) => {
+                        const x = item.transform[4].toFixed(4);  // X-coordinate
+                        const y = item.transform[5].toFixed(4);  // Y-coordinate
+                        const xSize = (item.width).toFixed(4);   // Width of the text box
+                        const ySize = (item.height).toFixed(4);  // Height of the text box
+                        textData.push({ 
+                            Item: rowNumber, 
+                            Filename: filename, 
+                            Page: pageNum, 
+                            'X Loc': x, 
+                            'Y Loc': y, 
+                            'X Size': xSize, 
+                            'Y Size': ySize, 
+                            Content: item.str 
+                        });
+                        rowNumber++;
+                    });
+                } catch (error) {
+                    console.error(`Error extracting text from page ${pageNum}:`, error);
+                }
+            }
+
+            console.log("Text extraction completed:", textData);
+            renderTable(textData);
+            currentExtraction = "text";
+        });
+
+        // Extract comments when "Extract Comments" button is clicked
+        document.getElementById('extract-comments').addEventListener('click', async function() {
+            if (!pdf) {
+                console.log("PDF is not loaded.");
+                return;
+            }
+
+            commentData = [];
+            let rowNumber = 1;
+            console.log("Starting comment extraction");
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                try {
+                    const page = await pdf.getPage(pageNum);
+                    const annotations = await page.getAnnotations();
+
+                    annotations.forEach((annotation) => {
+                        const rect = annotation.rect.map(coord => coord.toFixed(4)).join(', ');  // Rect coordinates
+                        const x = annotation.rect[0].toFixed(4);  // X-coordinate
+                        const y = annotation.rect[1].toFixed(4);  // Y-coordinate
+                        const title = annotation.title ? annotation.title : 'No title';  // Comment title
+                        const content = annotation.contents ? annotation.contents : 'No content';  // Comment content
+                        const metadata = annotation.modificationDate ? `Modified on: ${annotation.modificationDate}` : 'No metadata';  // Metadata
+                        commentData.push({ Item: rowNumber, Filename: filename, Page: pageNum, Rect: rect, 'X Loc': x, 'Y Loc': y, Title: title, Content: content + ' (' + metadata + ')' });
+                        rowNumber++;
+                    });
+                } catch (error) {
+                    console.error(`Error extracting comments from page ${pageNum}:`, error);
+                }
+            }
+
+            console.log("Comment extraction completed:", commentData);
+            renderTable(commentData);
+            currentExtraction = "comments";
+        });
+
+        // Apply regex filter
+        document.getElementById('apply-filter').addEventListener('click', function() {
+            const pattern = document.getElementById('filter-pattern').value;
+            if (!pattern) {
+                console.log("No regex pattern entered.");
+                return;
+            }
+
+            const regex = new RegExp(pattern, 'i');  // Case-insensitive regex
+            console.log("Applying regex filter:", pattern);
+
+            let filteredData = [];
+            if (currentExtraction === "text") {
+                filteredData = textData.filter(row => regex.test(row.Content));
+            } else if (currentExtraction === "comments") {
+                filteredData = commentData.filter(row => regex.test(row.Content));
+            }
+
+            console.log("Filtered data:", filteredData);
+            renderTable(filteredData);
+        });
+
+        // Handle pattern file upload
+        document.getElementById('pattern-upload-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.log("No file selected for pattern upload.");
+                return;
+            }
+
+            Papa.parse(file, {
+                header: true,
+                complete: function(results) {
+                    patterns = results.data.map(row => ({
+                        pattern: new RegExp(row['Regex Pattern'], 'i'),
+                        name: row['Pattern Name']
+                    }));
+
+                    console.log("Patterns loaded:", patterns);
+
+                    applyPatternFilter();
+                }
+            });
+        });
+
+        // Apply pattern-based filtering
+        function applyPatternFilter() {
+            const filteredData = textData.map(row => {
+                for (const { pattern, name } of patterns) {
+                    if (pattern.test(row.Content)) {
+                        return { ...row, PatternName: name };
+                    }
+                }
+                return row;
+            }).filter(row => row.PatternName);
+
+            renderTable(filteredData);
+        }
+    </script>
+</body>
+</html>
