@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Model Viewer</title>
+  
+  <!-- Milligram CSS and Barlow Condensed font -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Model Viewer JS -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  
+  <!-- Custom Styling -->
+  <style>
+    /* Dark mode styling */
+    body {
+      font-family: 'Barlow Condensed', sans-serif;
+      background-color: #000;
+      color: #eee;
+      display: flex;
+      margin: 0;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Model Viewer Styling with Fade-in */
+    model-viewer {
+      width: 100%;
+      height: 100vh;
+      outline: none;
+      background-color: #000;
+      opacity: 0; /* Start hidden */
+      transition: opacity 1s ease; /* Smooth fade-in effect */
+    }
+
+    /* Sidebar Styling with Slide Animation and Minimalist Design */
+    #sidebar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 20%;
+      max-width: 300px;
+      min-width: 200px;
+      height: 100vh;
+      padding: 1em;
+      background: #000;
+      color: #0f0;
+      border-left: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      transform: translateX(100%); /* Initially off-screen */
+      transition: transform 0.4s ease; /* Smooth sliding */
+    }
+    
+    /* Sidebar visible state */
+    #sidebar.visible {
+      transform: translateX(0); /* Slide into view */
+    }
+
+    /* Close Sidebar Button */
+    #close-sidebar {
+      align-self: flex-end;
+      background: #000;
+      color: #0f0;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      margin-bottom: 1em;
+    }
+
+    /* Updated No Properties Message */
+    #no-properties-message {
+      font-size: 1em;
+      color: #0f0;
+      padding: 1em;
+      background: #000;
+      border: none;
+    }
+
+    /* Toggle Sidebar Button */
+    #toggle-sidebar {
+      position: absolute;
+      top: 1em;
+      right: 1em;
+      padding: 0.5em;
+      font-size: 1.5em;
+      background-color: #333;
+      color: #0f0;
+      border: none;
+      cursor: pointer;
+      z-index: 10;
+      text-align: center;
+      width: 2em;
+      height: 2em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Console-style Log Messages */
+    #terminal-log {
+      position: absolute;
+      top: 1em;
+      left: 1em;
+      font-family: 'Courier New', monospace;
+      color: #0f0;
+      font-size: 1em;
+      text-align: left;
+      opacity: 1;
+      transition: opacity 1s ease;
+      z-index: 20;
+      white-space: pre-wrap;
+    }
+
+    /* Minimalist Section Header and Content Styling */
+    .collapsible {
+      cursor: pointer;
+      padding: 0.5em;
+      font-weight: bold;
+      color: #0f0;
+      background: #000;
+      border: none;
+      text-align: left;
+    }
+
+    .content {
+      display: none;
+      padding: 0.5em;
+      color: #0f0;
+      background: #000;
+      border: none;
+      margin-bottom: 1em;
+    }
+
+    /* Settings Tab Styling */
+    #settings-tab {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      color: #0f0;
+    }
+
+    #settings-content {
+      display: none;
+    }
+
+    /* Custom Icon */
+    .settings-icon {
+      margin-right: 0.5em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Model Viewer Component -->
+  <model-viewer id="model-viewer" src="" auto-rotate camera-controls></model-viewer>
+
+  <!-- Console-style Log Messages -->
+  <div id="terminal-log">WELCOME</div>
+
+  <!-- Sidebar Toggle Button -->
+  <button id="toggle-sidebar" onclick="toggleSidebar()">P</button>
+
+  <!-- Sidebar with Collapsible Properties and Settings -->
+  <div id="sidebar">
+    <button id="close-sidebar" onclick="toggleSidebar()">Close</button>
+
+    <div id="no-properties-message">
+      Industrial Data: Minimodels.<br>
+      No properties were loaded for this model. The sections below will be empty.
+    </div>
+
+    <!-- Property Sections -->
+    <button class="collapsible">Geometry</button>
+    <div class="content">
+      <p>Details about geometry...</p>
+    </div>
+
+    <button class="collapsible">Materials</button>
+    <div class="content">
+      <p>Details about materials...</p>
+    </div>
+
+    <button class="collapsible">Metadata</button>
+    <div class="content">
+      <p>Details about metadata...</p>
+    </div>
+
+    <!-- Links: Docs Section -->
+    <button class="collapsible">Links: Docs</button>
+    <div class="content" id="doc-references-content">
+      <p>No document references available.</p>
+    </div>
+
+    <!-- Links: Progress Section -->
+    <button class="collapsible">Links: Progress</button>
+    <div class="content" id="progress-links-content">
+      <p>No progress links available.</p>
+    </div>
+
+    <!-- Links: Quality Section -->
+    <button class="collapsible">Links: Quality</button>
+    <div class="content" id="quality-links-content">
+      <p>No quality links available.</p>
+    </div>
+
+    <!-- Links: Other Section -->
+    <button class="collapsible">Links: Other</button>
+    <div class="content" id="other-links-content">
+      <p>No other links available.</p>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings-tab" onclick="toggleSettings()">
+      <span class="settings-icon">⚙️</span>
+      <span>Settings</span>
+    </div>
+    <div id="settings-content">
+      <label for="color-mode">Color Mode:</label>
+      <select id="color-mode" onchange="updateColorMode()">
+        <option value="full">Full Color</option>
+        <option value="greyscale">Greyscale</option>
+        <option value="limited">Limited Color</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- JavaScript for Collapsible, Settings, JSON Loading, and Logging -->
+  <script>
+    // Configurable file URLs and delay
+    const glbFileUrl = 'https://bmg-pcl.github.io/minimodel-demo/Mini-Model-2-7213-74-3500-S02.glb';  // Default GLB file URL
+    const jsonFileUrl = '';  // Set JSON file path here if available
+    const messageDelay = 750; // Delay in ms
+
+    // Terminal log messages and timing
+    const logMessages = ["WELCOME", "LOADING VIEWER", "LOADING MINIMODEL", "COMPLETE"];
+    const terminalLog = document.getElementById('terminal-log');
+    const modelViewer = document.getElementById('model-viewer');
+
+    // Display each log message sequentially
+    let currentMessageIndex = 0;
+    function showNextLogMessage() {
+      terminalLog.textContent += `\n${logMessages[currentMessageIndex]}`;
+      currentMessageIndex += 1;
+      if (currentMessageIndex < logMessages.length) {
+        setTimeout(showNextLogMessage, messageDelay);
+      } else {
+        setTimeout(() => {
+          terminalLog.style.opacity = 0;
+          modelViewer.style.opacity = 1; // Fade in the model
+        }, messageDelay);
+      }
+    }
+    showNextLogMessage();
+
+    // Set GLB file URL for the model-viewer
+    modelViewer.src = glbFileUrl;
+
+    // Load JSON file if available
+    if (jsonFileUrl) {
+      fetch(jsonFileUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('JSON not available');
+          }
+          return response.json();
+        })
+        .then(data => {
+          populateSidebar(data);
+          document.getElementById('no-properties-message').style.display = 'none';
+        })
+        .catch(() => {
+          console.warn('No JSON file found. Sidebar will only show default message.');
+        });
+    }
+
+    // Toggle Sidebar Visibility with Slide
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('visible');
+    }
+
+    // Populate the sidebar with JSON data
+    function populateSidebar(data) {
+      document.querySelectorAll('.content').forEach((section, index) => {
+        const sectionData = data[index];
+        if (sectionData) {
+          section.innerHTML = `<p>${sectionData.description || 'No details available'}</p>`;
+        }
+      });
+
+      // Populate doc references if URLs are available
+      const docReferences = data.docReferences || [];
+      const docReferencesContent = document.getElementById('doc-references-content');
+      docReferencesContent.innerHTML = docReferences.length ? docReferences.map(ref => `<a href="${ref}" target="_blank">${ref}</a>`).join('<br>') : "<p>No document references available.</p>";
+
+      // Populate progress links if URLs are available
+      const progressLinks = data.progressLinks || [];
+      const progressLinksContent = document.getElementById('progress-links-content');
+      progressLinksContent.innerHTML = progressLinks.length ? progressLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>') : "<p>No progress links available.</p>";
+
+      // Populate quality links if URLs are available
+      const qualityLinks = data.qualityLinks || [];
+      const qualityLinksContent = document.getElementById('quality-links-content');
+      qualityLinksContent.innerHTML = qualityLinks.length ? qualityLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>') : "<p>No quality links available.</p>";
+
+      // Populate other links if URLs are available
+      const otherLinks = data.otherLinks || [];
+      const otherLinksContent = document.getElementById('other-links-content');
+      otherLinksContent.innerHTML = otherLinks.length ? otherLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>') : "<p>No other links available.</p>";
+    }
+
+    // Toggle Collapsible Sections
+    document.querySelectorAll('.collapsible').forEach(button => {
+      button.addEventListener('click', () => {
+        const content = button.nextElementSibling;
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
+      });
+    });
+
+    // Toggle Settings Content
+    function toggleSettings() {
+      const settingsContent = document.getElementById('settings-content');
+      settingsContent.style.display = settingsContent.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Update Color Mode
+    function updateColorMode() {
+      const colorMode = document.getElementById('color-mode').value;
+      switch (colorMode) {
+        case 'greyscale':
+          modelViewer.style.filter = 'grayscale(100%)';
+          break;
+        case 'limited':
+          modelViewer.style.filter = 'contrast(80%) saturate(50%)';
+          break;
+        default:
+          modelViewer.style.filter = 'none';
+      }
+    }
+  </script>
+
+</body>
+</html>
