@@ -25,6 +25,59 @@
       position: relative;
     }
 
+    /* Main content styling */
+    main {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      align-items: flex-start;
+      padding-left: 1em;
+      position: relative;
+    }
+
+    /* CRT-style Log Messages with Full-Area Scanline Effect */
+    #terminal-log {
+      font-family: 'Courier New', monospace;
+      color: #0f0;
+      font-size: 1em;
+      position: absolute;
+      top: 1em;
+      left: 1em;
+      opacity: 1;
+      transition: opacity 1s ease;
+      z-index: 20;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+
+    main::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(15, 255, 0, 0.1),
+        rgba(15, 255, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      animation: scan 0.1s steps(20) infinite;
+      pointer-events: none;
+    }
+
+    /* Scanline animation */
+    @keyframes scan {
+      0% {
+        transform: translateY(-100%);
+      }
+      100% {
+        transform: translateY(100%);
+      }
+    }
+
     /* Model Viewer Styling with Fade-in */
     model-viewer {
       width: 100%;
@@ -35,7 +88,7 @@
       transition: opacity 1s ease; /* Smooth fade-in effect */
     }
 
-    /* Sidebar Styling with Slide Animation and Minimalist Design */
+    /* Sidebar Styling with Slide Animation */
     #sidebar {
       position: absolute;
       top: 0;
@@ -48,16 +101,15 @@
       background: #000;
       color: #0f0;
       border-left: 2px solid #333;
-      display: flex;
+      display: none; /* Initially hidden */
       flex-direction: column;
       z-index: 10;
-      transform: translateX(100%); /* Initially off-screen */
-      transition: transform 0.4s ease; /* Smooth sliding */
+      font-family: 'Barlow Condensed', sans-serif; /* Sidebar font */
     }
-    
+
     /* Sidebar visible state */
     #sidebar.visible {
-      transform: translateX(0); /* Slide into view */
+      display: flex;
     }
 
     /* Close Sidebar Button */
@@ -71,13 +123,14 @@
       margin-bottom: 1em;
     }
 
-    /* Updated No Properties Message */
-    #no-properties-message {
+    /* No JSON loaded message */
+    #no-json-message {
       font-size: 1em;
       color: #0f0;
       padding: 1em;
       background: #000;
-      border: none;
+      font-family: 'Barlow Condensed', sans-serif;
+      text-align: left;
     }
 
     /* Toggle Sidebar Button */
@@ -100,27 +153,12 @@
       align-items: center;
     }
 
-    /* Console-style Log Messages */
-    #terminal-log {
-      position: absolute;
-      top: 1em;
-      left: 1em;
-      font-family: 'Courier New', monospace;
-      color: #0f0;
-      font-size: 1em;
-      text-align: left;
-      opacity: 1;
-      transition: opacity 1s ease;
-      z-index: 20;
-      white-space: pre-wrap;
-    }
-
     /* Minimalist Section Header and Content Styling */
     .collapsible {
       cursor: pointer;
       padding: 0.5em;
       font-weight: bold;
-      color: #0f0;
+      color: #0f0; /* Green header */
       background: #000;
       border: none;
       text-align: left;
@@ -129,10 +167,11 @@
     .content {
       display: none;
       padding: 0.5em;
-      color: #0f0;
+      color: #ccc; /* Light grey for readability */
       background: #000;
       border: none;
       margin-bottom: 1em;
+      font-family: 'Barlow Condensed', sans-serif; /* Sidebar font */
     }
 
     /* Settings Tab Styling */
@@ -157,11 +196,13 @@
 </head>
 <body>
 
-  <!-- Model Viewer Component -->
-  <model-viewer id="model-viewer" src="" auto-rotate camera-controls></model-viewer>
+  <main>
+    <!-- Model Viewer Component -->
+    <model-viewer id="model-viewer" src="" auto-rotate camera-controls></model-viewer>
 
-  <!-- Console-style Log Messages -->
-  <div id="terminal-log">WELCOME</div>
+    <!-- Console-style Log Messages -->
+    <div id="terminal-log">INDUSTRIAL DATA</div><br>
+  </main>
 
   <!-- Sidebar Toggle Button -->
   <button id="toggle-sidebar" onclick="toggleSidebar()">P</button>
@@ -170,49 +211,50 @@
   <div id="sidebar">
     <button id="close-sidebar" onclick="toggleSidebar()">Close</button>
 
-    <div id="no-properties-message">
-      Industrial Data: Minimodels.<br>
-      No properties were loaded for this model. The sections below will be empty.
+    <!-- No JSON Loaded Message -->
+    <div id="no-json-message">
+      Industrial Minimodels.<br>
+      No properties loaded for this model; dummy values below.
     </div>
 
     <!-- Property Sections -->
     <button class="collapsible">Geometry</button>
-    <div class="content">
-      <p>Details about geometry...</p>
+    <div class="content" id="geometry-content">
+      <p></p>
     </div>
 
     <button class="collapsible">Materials</button>
-    <div class="content">
-      <p>Details about materials...</p>
+    <div class="content" id="materials-content">
+      <p></p>
     </div>
 
     <button class="collapsible">Metadata</button>
-    <div class="content">
-      <p>Details about metadata...</p>
+    <div class="content" id="metadata-content">
+      <p></p>
     </div>
 
     <!-- Links: Docs Section -->
     <button class="collapsible">Links: Docs</button>
     <div class="content" id="doc-references-content">
-      <p>No document references available.</p>
+      <p></p>
     </div>
 
     <!-- Links: Progress Section -->
     <button class="collapsible">Links: Progress</button>
     <div class="content" id="progress-links-content">
-      <p>No progress links available.</p>
+      <p></p>
     </div>
 
     <!-- Links: Quality Section -->
     <button class="collapsible">Links: Quality</button>
     <div class="content" id="quality-links-content">
-      <p>No quality links available.</p>
+      <p></p>
     </div>
 
     <!-- Links: Other Section -->
     <button class="collapsible">Links: Other</button>
     <div class="content" id="other-links-content">
-      <p>No other links available.</p>
+      <p></p>
     </div>
 
     <!-- Settings Tab -->
@@ -237,8 +279,8 @@
     const jsonFileUrl = '';  // Set JSON file path here if available
     const messageDelay = 750; // Delay in ms
 
-    // Terminal log messages and timing
-    const logMessages = ["WELCOME", "LOADING VIEWER", "LOADING MINIMODEL", "COMPLETE"];
+    // Terminal log messages and timing, prefixed with "> "
+    const logMessages = ["> WELCOME", "> LOADING VIEWER", "> LOADING MINIMODEL", "> COMPLETE"];
     const terminalLog = document.getElementById('terminal-log');
     const modelViewer = document.getElementById('model-viewer');
 
@@ -272,11 +314,14 @@
         })
         .then(data => {
           populateSidebar(data);
-          document.getElementById('no-properties-message').style.display = 'none';
+          document.getElementById('no-json-message').style.display = 'none';
         })
         .catch(() => {
           console.warn('No JSON file found. Sidebar will only show default message.');
+          populateWithDummyData();
         });
+    } else {
+      populateWithDummyData();
     }
 
     // Toggle Sidebar Visibility with Slide
@@ -285,34 +330,26 @@
       sidebar.classList.toggle('visible');
     }
 
+    // Populate with dummy data if no properties are loaded
+    function populateWithDummyData() {
+      document.getElementById('geometry-content').innerHTML = "<p>Prop1: Value1<br>Prop2: Value2</p>";
+      document.getElementById('materials-content').innerHTML = "<p>Prop1: Value1<br>Prop2: Value2</p>";
+      document.getElementById('metadata-content').innerHTML = "<p>Prop1: Value1<br>Prop2: Value2</p>";
+      document.getElementById('doc-references-content').innerHTML = "<p>Link1<br>Link2</p>";
+      document.getElementById('progress-links-content').innerHTML = "<p>Link1<br>Link2</p>";
+      document.getElementById('quality-links-content').innerHTML = "<p>Link1<br>Link2</p>";
+      document.getElementById('other-links-content').innerHTML = "<p>Link1<br>Link2</p>";
+    }
+
     // Populate the sidebar with JSON data
     function populateSidebar(data) {
-      document.querySelectorAll('.content').forEach((section, index) => {
-        const sectionData = data[index];
-        if (sectionData) {
-          section.innerHTML = `<p>${sectionData.description || 'No details available'}</p>`;
-        }
-      });
-
-      // Populate doc references if URLs are available
-      const docReferences = data.docReferences || [];
-      const docReferencesContent = document.getElementById('doc-references-content');
-      docReferencesContent.innerHTML = docReferences.length ? docReferences.map(ref => `<a href="${ref}" target="_blank">${ref}</a>`).join('<br>') : "<p>No document references available.</p>";
-
-      // Populate progress links if URLs are available
-      const progressLinks = data.progressLinks || [];
-      const progressLinksContent = document.getElementById('progress-links-content');
-      progressLinksContent.innerHTML = progressLinks.length ? progressLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>') : "<p>No progress links available.</p>";
-
-      // Populate quality links if URLs are available
-      const qualityLinks = data.qualityLinks || [];
-      const qualityLinksContent = document.getElementById('quality-links-content');
-      qualityLinksContent.innerHTML = qualityLinks.length ? qualityLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>') : "<p>No quality links available.</p>";
-
-      // Populate other links if URLs are available
-      const otherLinks = data.otherLinks || [];
-      const otherLinksContent = document.getElementById('other-links-content');
-      otherLinksContent.innerHTML = otherLinks.length ? otherLinks.map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>') : "<p>No other links available.</p>";
+      if (data.geometry) document.getElementById('geometry-content').innerHTML = `<p>${data.geometry}</p>`;
+      if (data.materials) document.getElementById('materials-content').innerHTML = `<p>${data.materials}</p>`;
+      if (data.metadata) document.getElementById('metadata-content').innerHTML = `<p>${data.metadata}</p>`;
+      if (data.docReferences) document.getElementById('doc-references-content').innerHTML = data.docReferences.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
+      if (data.progressLinks) document.getElementById('progress-links-content').innerHTML = data.progressLinks.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
+      if (data.qualityLinks) document.getElementById('quality-links-content').innerHTML = data.qualityLinks.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
+      if (data.otherLinks) document.getElementById('other-links-content').innerHTML = data.otherLinks.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
     }
 
     // Toggle Collapsible Sections
