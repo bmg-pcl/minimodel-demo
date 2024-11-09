@@ -145,6 +145,9 @@
       z-index: 10;
       font-family: 'Barlow Condensed', sans-serif; /* Sidebar font */
       overflow: hidden; /* Needed for CRT effect */
+      overflow-y: auto; /* Enables vertical scrolling */
+      max-height: 100vh; /* Ensures the sidebar does not exceed the viewport height */
+
     }
 
     /* Sidebar visible state */
@@ -238,6 +241,7 @@
       margin-right: 0.5em;
       cursor: pointer;
     }
+
   </style>
 </head>
 <body>
@@ -247,7 +251,7 @@
     <model-viewer id="model-viewer" src="" auto-rotate camera-controls style="width: 100%; height: 100vh; display: none;"></model-viewer>
 
     <!-- Console-style Log Messages -->
-    <div id="terminal-log">WELCOME</div>
+    <div id="terminal-log">INDUSTRIAL DATA</div>
   </main>
 
   <!-- Sidebar Toggle Button -->
@@ -332,7 +336,7 @@
     const jsonFileUrl = '';  
     const messageDelay = 750; 
 
-    const logMessages = ["> WELCOME", "> LOADING VIEWER", "> LOADING MINIMODEL", "> COMPLETE"];
+    const logMessages = ["> WELCOME", "> LOADING VIEWER...", "> LOADING MINIMODEL...", "> ...COMPLETE"];
     const terminalLog = document.getElementById('terminal-log');
     const modelViewer = document.getElementById('model-viewer');
     const mainElement = document.getElementById("main");
