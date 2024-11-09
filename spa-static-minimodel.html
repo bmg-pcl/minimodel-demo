@@ -7,7 +7,7 @@
   
   <!-- Milligram CSS and Barlow Condensed font -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
   
   <!-- Model Viewer JS -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -22,6 +22,7 @@
       display: flex;
       margin: 0;
       height: 100vh;
+      overflow-y: scroll; /* Fixes scrollbar jitter */
       position: relative;
     }
 
@@ -35,11 +36,11 @@
       position: relative;
     }
 
-    /* CRT-style Log Messages with Full-Area Scanline Effect */
+    /* CRT-style Log Messages */
     #terminal-log {
-      font-family: 'Courier New', monospace;
+      font-family: 'IBM Plex Mono', monospace; /* Retro terminal typeface */
       color: #0f0;
-      font-size: 1em;
+      font-size: 1.2em;
       position: absolute;
       top: 1em;
       left: 1em;
@@ -48,9 +49,11 @@
       z-index: 20;
       white-space: pre-wrap;
       line-height: 1.4;
+      text-shadow: 0 0 8px rgba(15, 255, 0, 0.8), 0 0 12px rgba(15, 255, 0, 0.5); /* Stronger glow effect */
     }
 
-    main::before {
+    /* CRT Effect for Main Area */
+    .crt-effect::before {
       content: "";
       position: absolute;
       top: 0;
@@ -59,17 +62,38 @@
       height: 100%;
       background: repeating-linear-gradient(
         0deg,
-        rgba(15, 255, 0, 0.1),
-        rgba(15, 255, 0, 0.1) 1px,
-        transparent 1px,
-        transparent 3px
+        rgba(15, 255, 0, 0.15),
+        rgba(15, 255, 0, 0.15) 2px,
+        black 3px
       );
-      animation: scan 0.1s steps(20) infinite;
       pointer-events: none;
+      z-index: -1;
+      animation: scanline 0.05s steps(1) infinite;
+    }
+
+    /* Enhanced Flicker effect over entire main area */
+    .crt-effect-flicker {
+      animation: flicker 0.12s infinite alternate;
+      background-color: rgba(0, 0, 0, 0.95);
+    }
+
+    /* Flicker effect */
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.9;
+        background-color: rgba(0, 0, 0, 0.9);
+      }
+      100% {
+        opacity: 0.85;
+        background-color: rgba(0, 0, 0, 0.85);
+      }
     }
 
     /* Scanline animation */
-    @keyframes scan {
+    @keyframes scanline {
       0% {
         transform: translateY(-100%);
       }
@@ -78,24 +102,39 @@
       }
     }
 
-    /* Model Viewer Styling with Fade-in */
-    model-viewer {
-      width: 100%;
-      height: 100vh;
-      outline: none;
-      background-color: #000;
-      opacity: 0; /* Start hidden */
-      transition: opacity 1s ease; /* Smooth fade-in effect */
-    }
-
-    /* Sidebar Styling with Slide Animation */
-    #sidebar {
+    /* CRT Effect for Sidebar */
+    .sidebar-crt-effect::before {
+      content: "";
       position: absolute;
       top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(15, 255, 0, 0.15),
+        rgba(15, 255, 0, 0.15) 2px,
+        black 3px
+      );
+      pointer-events: none;
+      z-index: -1;
+      animation: scanline 0.05s steps(1) infinite;
+    }
+    
+    /* Sidebar Glow and Flicker */
+    .sidebar-crt-effect {
+      position: relative;
+      color: #0f0;
+      text-shadow: 0 0 8px rgba(15, 255, 0, 0.7), 0 0 12px rgba(15, 255, 0, 0.5);
+      animation: flicker 0.1s infinite alternate;
+    }
+
+    /* Sidebar Styling with Fixed Position */
+    #sidebar {
+      position: fixed;
+      top: 0;
       right: 0;
-      width: 20%;
-      max-width: 300px;
-      min-width: 200px;
+      width: 300px;
       height: 100vh;
       padding: 1em;
       background: #000;
@@ -105,6 +144,7 @@
       flex-direction: column;
       z-index: 10;
       font-family: 'Barlow Condensed', sans-serif; /* Sidebar font */
+      overflow: hidden; /* Needed for CRT effect */
     }
 
     /* Sidebar visible state */
@@ -185,6 +225,12 @@
 
     #settings-content {
       display: none;
+      color: #0f0;
+    }
+
+    #color-mode {
+      color: #0f0; /* Green text for dropdown */
+      background: #333; /* Dark background */
     }
 
     /* Custom Icon */
@@ -196,12 +242,12 @@
 </head>
 <body>
 
-  <main>
-    <!-- Model Viewer Component -->
-    <model-viewer id="model-viewer" src="" auto-rotate camera-controls></model-viewer>
+  <main id="main">
+    <!-- Model Viewer Component, hidden initially -->
+    <model-viewer id="model-viewer" src="" auto-rotate camera-controls style="width: 100%; height: 100vh; display: none;"></model-viewer>
 
     <!-- Console-style Log Messages -->
-    <div id="terminal-log">INDUSTRIAL DATA</div><br>
+    <div id="terminal-log">WELCOME</div>
   </main>
 
   <!-- Sidebar Toggle Button -->
@@ -211,50 +257,50 @@
   <div id="sidebar">
     <button id="close-sidebar" onclick="toggleSidebar()">Close</button>
 
-    <!-- No JSON Loaded Message -->
+    <!-- No JSON loaded message -->
     <div id="no-json-message">
       Industrial Minimodels.<br>
       No properties loaded for this model; dummy values below.
     </div>
 
-    <!-- Property Sections -->
+    <!-- Property Sections with Dummy Values -->
     <button class="collapsible">Geometry</button>
     <div class="content" id="geometry-content">
-      <p></p>
+      <p>Prop1: Value1<br>Prop2: Value2</p>
     </div>
 
     <button class="collapsible">Materials</button>
     <div class="content" id="materials-content">
-      <p></p>
+      <p>Prop1: Value1<br>Prop2: Value2</p>
     </div>
 
     <button class="collapsible">Metadata</button>
     <div class="content" id="metadata-content">
-      <p></p>
+      <p>Prop1: Value1<br>Prop2: Value2</p>
     </div>
 
     <!-- Links: Docs Section -->
     <button class="collapsible">Links: Docs</button>
     <div class="content" id="doc-references-content">
-      <p></p>
+      <p>Link1<br>Link2</p>
     </div>
 
     <!-- Links: Progress Section -->
     <button class="collapsible">Links: Progress</button>
     <div class="content" id="progress-links-content">
-      <p></p>
+      <p>Link1<br>Link2</p>
     </div>
 
     <!-- Links: Quality Section -->
     <button class="collapsible">Links: Quality</button>
     <div class="content" id="quality-links-content">
-      <p></p>
+      <p>Link1<br>Link2</p>
     </div>
 
     <!-- Links: Other Section -->
     <button class="collapsible">Links: Other</button>
     <div class="content" id="other-links-content">
-      <p></p>
+      <p>Link1<br>Link2</p>
     </div>
 
     <!-- Settings Tab -->
@@ -269,104 +315,75 @@
         <option value="greyscale">Greyscale</option>
         <option value="limited">Limited Color</option>
       </select>
+      <label>
+        <input type="checkbox" id="scanline-toggle" onchange="toggleCRT()" checked>
+        CRT Raster Effect
+      </label>
+      <label>
+        <input type="checkbox" id="sidebar-crt-toggle" onchange="toggleSidebarCRT()">
+        CRT Sidebar Effect
+      </label>
     </div>
   </div>
 
   <!-- JavaScript for Collapsible, Settings, JSON Loading, and Logging -->
   <script>
-    // Configurable file URLs and delay
-    const glbFileUrl = 'https://bmg-pcl.github.io/minimodel-demo/Mini-Model-2-7213-74-3500-S02.glb';  // Default GLB file URL
-    const jsonFileUrl = '';  // Set JSON file path here if available
-    const messageDelay = 750; // Delay in ms
+    const glbFileUrl = 'https://bmg-pcl.github.io/minimodel-demo/Mini-Model-2-7213-74-3500-S02.glb';
+    const jsonFileUrl = '';  
+    const messageDelay = 750; 
 
-    // Terminal log messages and timing, prefixed with "> "
     const logMessages = ["> WELCOME", "> LOADING VIEWER", "> LOADING MINIMODEL", "> COMPLETE"];
     const terminalLog = document.getElementById('terminal-log');
     const modelViewer = document.getElementById('model-viewer');
+    const mainElement = document.getElementById("main");
+    const sidebar = document.getElementById("sidebar");
 
-    // Display each log message sequentially
     let currentMessageIndex = 0;
     function showNextLogMessage() {
       terminalLog.textContent += `\n${logMessages[currentMessageIndex]}`;
       currentMessageIndex += 1;
+
+      if (!mainElement.classList.contains("crt-effect")) {
+        mainElement.classList.add("crt-effect", "crt-effect-flicker");
+      }
+
       if (currentMessageIndex < logMessages.length) {
         setTimeout(showNextLogMessage, messageDelay);
       } else {
         setTimeout(() => {
           terminalLog.style.opacity = 0;
-          modelViewer.style.opacity = 1; // Fade in the model
+          modelViewer.style.display = 'block'; 
+          modelViewer.style.opacity = 1;
+          mainElement.classList.remove("crt-effect", "crt-effect-flicker");
         }, messageDelay);
       }
     }
     showNextLogMessage();
 
-    // Set GLB file URL for the model-viewer
     modelViewer.src = glbFileUrl;
 
-    // Load JSON file if available
-    if (jsonFileUrl) {
-      fetch(jsonFileUrl)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('JSON not available');
-          }
-          return response.json();
-        })
-        .then(data => {
-          populateSidebar(data);
-          document.getElementById('no-json-message').style.display = 'none';
-        })
-        .catch(() => {
-          console.warn('No JSON file found. Sidebar will only show default message.');
-          populateWithDummyData();
-        });
-    } else {
-      populateWithDummyData();
-    }
-
-    // Toggle Sidebar Visibility with Slide
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
       sidebar.classList.toggle('visible');
     }
 
-    // Populate with dummy data if no properties are loaded
-    function populateWithDummyData() {
-      document.getElementById('geometry-content').innerHTML = "<p>Prop1: Value1<br>Prop2: Value2</p>";
-      document.getElementById('materials-content').innerHTML = "<p>Prop1: Value1<br>Prop2: Value2</p>";
-      document.getElementById('metadata-content').innerHTML = "<p>Prop1: Value1<br>Prop2: Value2</p>";
-      document.getElementById('doc-references-content').innerHTML = "<p>Link1<br>Link2</p>";
-      document.getElementById('progress-links-content').innerHTML = "<p>Link1<br>Link2</p>";
-      document.getElementById('quality-links-content').innerHTML = "<p>Link1<br>Link2</p>";
-      document.getElementById('other-links-content').innerHTML = "<p>Link1<br>Link2</p>";
+    function toggleCRT() {
+      const isEnabled = document.getElementById('scanline-toggle').checked;
+      if (isEnabled) {
+        mainElement.classList.add('crt-effect', 'crt-effect-flicker');
+      } else {
+        mainElement.classList.remove('crt-effect', 'crt-effect-flicker');
+      }
     }
 
-    // Populate the sidebar with JSON data
-    function populateSidebar(data) {
-      if (data.geometry) document.getElementById('geometry-content').innerHTML = `<p>${data.geometry}</p>`;
-      if (data.materials) document.getElementById('materials-content').innerHTML = `<p>${data.materials}</p>`;
-      if (data.metadata) document.getElementById('metadata-content').innerHTML = `<p>${data.metadata}</p>`;
-      if (data.docReferences) document.getElementById('doc-references-content').innerHTML = data.docReferences.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
-      if (data.progressLinks) document.getElementById('progress-links-content').innerHTML = data.progressLinks.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
-      if (data.qualityLinks) document.getElementById('quality-links-content').innerHTML = data.qualityLinks.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
-      if (data.otherLinks) document.getElementById('other-links-content').innerHTML = data.otherLinks.map(link => `<p><a href="${link}" target="_blank">${link}</a></p>`).join('');
+    function toggleSidebarCRT() {
+      const isSidebarCRTEnabled = document.getElementById('sidebar-crt-toggle').checked;
+      if (isSidebarCRTEnabled) {
+        sidebar.classList.add('sidebar-crt-effect');
+      } else {
+        sidebar.classList.remove('sidebar-crt-effect');
+      }
     }
 
-    // Toggle Collapsible Sections
-    document.querySelectorAll('.collapsible').forEach(button => {
-      button.addEventListener('click', () => {
-        const content = button.nextElementSibling;
-        content.style.display = content.style.display === 'block' ? 'none' : 'block';
-      });
-    });
-
-    // Toggle Settings Content
-    function toggleSettings() {
-      const settingsContent = document.getElementById('settings-content');
-      settingsContent.style.display = settingsContent.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // Update Color Mode
     function updateColorMode() {
       const colorMode = document.getElementById('color-mode').value;
       switch (colorMode) {
@@ -379,6 +396,23 @@
         default:
           modelViewer.style.filter = 'none';
       }
+    }
+
+    document.querySelectorAll('.collapsible').forEach(button => {
+      button.addEventListener('click', () => {
+        const content = button.nextElementSibling;
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
+      });
+    });
+
+    function toggleSettings() {
+      const settingsContent = document.getElementById('settings-content');
+      settingsContent.style.display = settingsContent.style.display === 'block' ? 'none' : 'block';
+    }
+
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
+      document.getElementById('scanline-toggle').checked = false;
+      toggleCRT();
     }
   </script>
 
