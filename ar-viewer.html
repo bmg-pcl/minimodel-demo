@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en" allow="xr-spatial-tracking">
+<head>
+  <meta charset="UTF-8">
+  <title>Web Standards AR Viewer</title>
+  <!-- Milligram CSS from CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+  <!-- Barlow Condensed Typeface -->
+  <link href="https://fonts.googleapis.com/css?family=Barlow+Condensed&display=swap" rel="stylesheet">
+  <!-- Modern console-style font for splash screen (Share Tech Mono) -->
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!-- Import map for ES modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js"
+    }
+  }
+  </script>
+  <style>
+    /* Dark and Light Mode Styles */
+    body.dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    body.light-mode {
+      background-color: #ffffff;
+      color: #000000;
+    }
+    a { color: #bb86fc; }
+    
+    /* Global Styles */
+    body {
+      font-family: 'Barlow Condensed', sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
+    
+    /* Splash Screen covers entire viewport */
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 300;
+      opacity: 1;
+    }
+    
+    /* Splash message styling – using Share Tech Mono in console-green */
+    #splashMessage {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 3.5em;
+      text-transform: uppercase;
+      color: #00FF00;
+    }
+    
+    /* Camera Feed & AR Container */
+    #cameraFeed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -2;
+    }
+    #ar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    
+    /* Sidebar */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: rgba(20,20,20,0.95);
+      box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      overflow-y: auto;
+    }
+    #sidebar.open {
+      transform: translateX(0);
+    }
+    .sidebar-header {
+      padding: 1em;
+      background-color: #006400;
+      color: #FFD700;
+      cursor: pointer;
+    }
+    .sidebar-content {
+      padding: 1em;
+      height: calc(100% - 60px);
+    }
+    .toggle-sidebar {
+      position: fixed;
+      top: 1em;
+      right: 1em;
+      background-color: #006400;
+      color: #FFD700;
+      border: none;
+      padding: 0.5em 1em;
+      z-index: 210;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+    /* Hide Options button when sidebar is open */
+    #sidebar.open ~ .toggle-sidebar {
+      display: none;
+    }
+    .control-group {
+      margin-bottom: 1em;
+    }
+    
+    /* Alignment Controls: Game Controller Style */
+    .nudge-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, auto);
+      gap: 5px;
+      justify-items: center;
+      align-items: center;
+      margin-top: 1em;
+    }
+    .nudge-container button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .nudge-container button svg {
+      width: 50px;
+      height: 50px;
+      fill: currentColor;
+    }
+    .nudge-container .empty {
+      visibility: hidden;
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <!-- Video element for camera feed -->
+  <video id="cameraFeed" autoplay muted playsinline></video>
+  
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div id="splashMessage"></div>
+  </div>
+  
+  <!-- AR display container -->
+  <div id="ar-container"></div>
+  
+  <!-- Sidebar toggle button -->
+  <button class="toggle-sidebar" id="toggleSidebar">Options</button>
+  
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-header" id="sidebarHeader">
+      <h3>Options</h3>
+    </div>
+    <div class="sidebar-content">
+      <!-- Geolocation (if needed) -->
+      <div class="control-group">
+        <label for="geoloc">Geolocation (lat, lng):</label>
+        <input type="text" id="geoloc" placeholder="e.g. 37.7749,-122.4194">
+      </div>
+      <!-- Alignment Controls -->
+      <div class="control-group">
+        <button id="alignMarker">Align to Marker</button>
+        <div class="nudge-container">
+          <div class="empty"></div>
+          <button id="nudgeUp" title="Nudge Up">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.59 5.58L20 12l-8-8-8 8z"></path>
+            </svg>
+          </button>
+          <div class="empty"></div>
+          <button id="nudgeLeft" title="Nudge Left">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 11H7.83l5.59-5.59L12 4 4 12l8 8 1.41-1.41L7.83 13H19v-2z"></path>
+            </svg>
+          </button>
+          <div class="empty"></div>
+          <button id="nudgeRight" title="Nudge Right">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 11h11.17l-5.59-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H5v-2z"></path>
+            </svg>
+          </button>
+          <div class="empty"></div>
+          <button id="nudgeDown" title="Nudge Down">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 12l1.41-1.41L11 16.17V4h2v12.17l5.59-5.58L20 12l-8 8-8-8z"></path>
+            </svg>
+          </button>
+          <div class="empty"></div>
+        </div>
+      </div>
+      <!-- Camera Options -->
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="greyscaleCamera">
+          Grayscale Camera
+        </label>
+      </div>
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="cameraOff">
+          Camera Off (hide camera capture)
+        </label>
+      </div>
+      <!-- Dark Mode toggle -->
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="darkMode" checked>
+          Dark Mode
+        </label>
+      </div>
+      <!-- Properties Section -->
+      <div class="control-group">
+        <h4>Properties</h4>
+        <div id="properties"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import * as THREE from 'three';
+    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/webxr/ARButton.js';
+    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/loaders/GLTFLoader.js';
+
+    console.log("Starting AR viewer...");
+
+    /* --- Splash Screen Sequence --- */
+    const splash = document.getElementById('splash');
+    const splashMessage = document.getElementById('splashMessage');
+    const opening_messages = ["XR Digital Constructability", "Welcome", "Loading", "Launching"];
+    const view_time = 1200;    // 1.2 sec per message
+    const fade_time = 300;     // 0.3 sec fade between messages
+    const explode_time = 3000; // Explosion lasts 3 sec
+    const final_fade_time = 3000; // Final fade out lasts 3 sec
+
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    async function runSplashSequence() {
+      // Cycle through all messages except the final one
+      for (let i = 0; i < opening_messages.length - 1; i++) {
+        splashMessage.innerText = opening_messages[i];
+        splashMessage.style.transition = "";
+        splashMessage.style.opacity = 1;
+        await delay(view_time);
+        splashMessage.style.transition = `opacity ${fade_time}ms ease`;
+        splashMessage.style.opacity = 0;
+        await delay(fade_time);
+      }
+      // Final message ("Launching")
+      splashMessage.innerText = opening_messages[opening_messages.length - 1];
+      splashMessage.style.transition = "";
+      splashMessage.style.opacity = 1;
+      await delay(view_time);
+      // Trigger explosion animation, then fade out splash
+      await animateExplosion();
+      splash.style.transition = `opacity ${final_fade_time}ms ease`;
+      splash.style.opacity = 0;
+      await delay(final_fade_time);
+      splash.remove();
+    }
+    
+    function animateExplosion() {
+      return new Promise(resolve => {
+        splashMessage.style.display = "none";
+        const canvas = document.createElement("canvas");
+        canvas.id = "splashCanvas";
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.width = "100vw";
+        canvas.style.height = "100vh";
+        splash.appendChild(canvas);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#00FF00";
+        ctx.font = "bold 70px 'Share Tech Mono'";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Launching", canvas.width / 2, canvas.height / 2);
+        
+        const gap = 2;
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const particles = [];
+        for (let y = 0; y < canvas.height; y += gap) {
+          for (let x = 0; x < canvas.width; x += gap) {
+            const idx = (y * canvas.width + x) * 4;
+            const alpha = imgData.data[idx + 3];
+            if (alpha > 128) {
+              particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 3,
+                alpha: 1
+              });
+            }
+          }
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const startTime = performance.now();
+        function animateParticles() {
+          const now = performance.now();
+          const elapsed = (now - startTime) / 1000;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha = Math.max(0, 1 - elapsed / (explode_time / 1000));
+            ctx.fillStyle = `rgba(0,255,0,${p.alpha})`;
+            ctx.fillRect(p.x, p.y, gap, gap);
+          });
+          if (elapsed < explode_time / 1000) {
+            requestAnimationFrame(animateParticles);
+          } else {
+            canvas.remove();
+            resolve();
+          }
+        }
+        animateParticles();
+      });
+    }
+    
+    runSplashSequence();
+    
+    /* --- Check for getUserMedia and load camera feed --- */
+    const cameraFeed = document.getElementById('cameraFeed');
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+      console.error("getUserMedia is not available. Ensure you are running in a secure context (HTTPS or localhost) and that your browser supports it.");
+    } else {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => {
+        cameraFeed.srcObject = stream;
+        console.log("Camera feed enabled.");
+      })
+      .catch(err => {
+        console.error("Error accessing camera feed:", err);
+      });
+    }
+    
+    /* --- Asynchronously load GLB and JSON while splash runs --- */
+    let model;
+    function loadModel() {
+      console.log("Loading model: mini_model.glb ...");
+      const loader = new GLTFLoader();
+      loader.load(
+        'mini_model.glb',
+        function(gltf) {
+          model = gltf.scene;
+          model.position.set(0, 0, -2);
+          scene.add(model);
+          console.log("...finished loading model.");
+        },
+        function(progress) {
+          console.log("Model loading progress:", progress.loaded, "of", progress.total);
+        },
+        function(error) {
+          console.error("Error loading model:", error);
+        }
+      );
+    }
+    
+    function loadJSON() {
+      console.log("Loading JSON propset...");
+      fetch('cable_information.json')
+        .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok: " + response.statusText);
+          return response.json();
+        })
+        .then(data => {
+          console.log("Finished loading JSON propset.", data);
+          const propertiesDiv = document.getElementById('properties');
+          propertiesDiv.innerHTML = "";
+          for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+              const value = data[key];
+              const p = document.createElement('p');
+              let displayValue = "";
+              if (Array.isArray(value)) {
+                displayValue = value.join(", ");
+              } else if (typeof value === 'object' && value !== null) {
+                if (key.toLowerCase() === "link") {
+                  if (value.HREF && value.A) {
+                    displayValue = `<a href="${value.HREF}" target="_blank">${value.A}</a>`;
+                  } else {
+                    displayValue = JSON.stringify(value);
+                  }
+                } else {
+                  displayValue = JSON.stringify(value);
+                }
+              } else {
+                displayValue = value;
+              }
+              p.innerHTML = `<strong>${key}:</strong> ${displayValue}`;
+              propertiesDiv.appendChild(p);
+            }
+          }
+          if (!data.hasOwnProperty("Link") && !data.hasOwnProperty("link")) {
+            const p = document.createElement('p');
+            p.innerHTML = `<strong>Link:</strong> <a href="https://google.com" target="_blank">Google</a>`;
+            propertiesDiv.appendChild(p);
+          }
+          console.log("Properties displayed.");
+        })
+        .catch(err => console.error("Error loading cable_information.json:", err));
+    }
+    
+    /* --- AR Setup --- */
+    let camera, scene, renderer, controller;
+    function initAR() {
+      console.log("Initializing AR scene...");
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+      
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 0); // transparent background
+      renderer.xr.enabled = true;
+      document.getElementById('ar-container').appendChild(renderer.domElement);
+      console.log("Renderer and canvas set up.");
+      
+      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+      console.log("AR button created.");
+      
+      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+      scene.add(light);
+      console.log("Added hemisphere light.");
+      
+      renderer.setAnimationLoop(render);
+      console.log("Animation loop started.");
+      
+      loadModel();
+      loadJSON();
+    }
+    
+    function render() {
+      renderer.render(scene, camera);
+    }
+    
+    initAR();
+    
+    /* --- UI Event Handlers --- */
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarHeader = document.getElementById('sidebarHeader');
+    
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.add("open");
+      toggleSidebar.style.display = "none";
+      console.log("Sidebar opened; hiding Options button.");
+    });
+    
+    sidebarHeader.addEventListener('click', () => {
+      sidebar.classList.remove("open");
+      toggleSidebar.style.display = "block";
+      console.log("Sidebar collapsed; showing Options button.");
+    });
+    
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') document.getElementById('nudgeUp').click();
+      else if (e.key === 'ArrowDown') document.getElementById('nudgeDown').click();
+      else if (e.key === 'ArrowLeft') document.getElementById('nudgeLeft').click();
+      else if (e.key === 'ArrowRight') document.getElementById('nudgeRight').click();
+    });
+    
+    document.getElementById('nudgeUp').addEventListener('click', () => {
+      console.log('Nudge Up clicked.');
+      if (model) { model.position.y += 0.1; console.log("Model new position:", model.position); }
+      else { console.warn("Model not loaded yet."); }
+    });
+    document.getElementById('nudgeDown').addEventListener('click', () => {
+      console.log('Nudge Down clicked.');
+      if (model) { model.position.y -= 0.1; console.log("Model new position:", model.position); }
+      else { console.warn("Model not loaded yet."); }
+    });
+    document.getElementById('nudgeLeft').addEventListener('click', () => {
+      console.log('Nudge Left clicked.');
+      if (model) { model.position.x -= 0.1; console.log("Model new position:", model.position); }
+      else { console.warn("Model not loaded yet."); }
+    });
+    document.getElementById('nudgeRight').addEventListener('click', () => {
+      console.log('Nudge Right clicked.');
+      if (model) { model.position.x += 0.1; console.log("Model new position:", model.position); }
+      else { console.warn("Model not loaded yet."); }
+    });
+    
+    document.getElementById('alignMarker').addEventListener('click', () => {
+      console.log("Align to Marker clicked.");
+      // Insert marker alignment logic here
+    });
+    
+    document.getElementById('greyscaleCamera').addEventListener('change', (e) => {
+      console.log("Grayscale camera toggle:", e.target.checked);
+      cameraFeed.style.filter = e.target.checked ? 'grayscale(100%)' : 'none';
+    });
+    
+    document.getElementById('cameraOff').addEventListener('change', (e) => {
+      console.log("Camera off toggle:", e.target.checked);
+      cameraFeed.style.filter = e.target.checked ? 'brightness(0.2)' : 'none';
+    });
+    
+    document.getElementById('darkMode').addEventListener('change', (e) => {
+      console.log("Dark Mode toggle:", e.target.checked);
+      if (e.target.checked) {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+      }
+    });
+  </script>
+</body>
+</html>

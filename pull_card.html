@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cable Information</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: 11in 17in landscape;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                size: 11in 17in landscape;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Barlow Condensed', sans-serif;
+            height: 11in;
+            width: 17in;
+            box-sizing: border-box;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .modelshot-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 70%;
+            height: 100%;
+            /* Full height */
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+            /* 50% alpha */
+            box-sizing: border-box;
+        }
+
+        .modelshot-container .modelshot-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            /* Ensure the image scales properly within the container */
+        }
+
+        .info-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 30%;
+            height: 100%;
+            /* Fill right side */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+            /* 50% alpha */
+        }
+
+        .topview-container {
+            position: relative;
+            width: 100%;
+            /* Take full width of info container */
+            height: 25%;
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+            /* 50% alpha */
+        }
+
+        .topview-container .compass {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            width: 100px;
+            /* Adjust size as needed */
+            height: auto;
+            object-fit: contain;
+        }
+
+        .topview-container .topview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            /* Ensure the image scales properly within the container */
+        }
+
+        .table-container {
+            width: 100%;
+            /* Align with top view */
+            max-height: 60%;
+            /* Take most of the right-hand side */
+            overflow: auto;
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+            /* 50% alpha */
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0;
+            /* No padding */
+            border: 1px solid #78787877;
+        }
+
+        th {
+            font-weight: 700;
+            /* Bold */
+        }
+
+        td {
+            font-weight: 400;
+            /* Normal */
+        }
+
+        .qr1-container,
+        .qr2-container {
+            position: absolute;
+            width: 5%;
+            /* Adjust for QR size */
+            aspect-ratio: 1;
+            /* Ensure square */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            /* Label at bottom */
+            align-items: center;
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+            /* 50% alpha */
+        }
+
+        .qr1-container {
+            bottom: 2%;
+            left: 5%;
+        }
+
+        .qr2-container {
+            top: 2%;
+            left: 5%;
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: auto;
+        }
+
+        .qr-label {
+            width: 100%;
+            /* Full width of the QR container */
+            background-color: #000;
+            color: #fff;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            /* Bold text */
+            text-align: center;
+            padding: 5px 0;
+            /* Vertical padding */
+            font-size: 0.9em;
+        }
+
+        .feedback-container {
+            width: 100%;
+            padding: 10px;
+            font-family: 'Barlow Condensed', sans-serif;
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+            position: relative;
+            /* Adds spacing after the table-container */
+        }
+
+        .feedback-container h2 {
+            font-weight: 700;
+            margin: 0 0 10px 0;
+        }
+
+        .feedback-container p {
+            margin: 8px 0;
+            font-weight: 400;
+            font-size: 1em;
+        }
+
+        .feedback-qr-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 15%;
+            aspect-ratio: 1;
+            margin-right: 10px;
+            /* border: 2px dotted rgba(0, 0, 0, 0.5); */
+        }
+
+        .feedback-qr-container img {
+            width: 100%;
+            height: auto;
+        }
+
+        .feedback-qr-container .qr-label {
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            padding: 5px 0;
+            font-weight: 700;
+            font-size: 0.8em;
+            width: 100%;
+        }
+
+        .rating-legend {
+            font-size: 0.9em;
+            margin: -5px 0 5px 0;
+            color: #333;
+            font-style: italic;
+        }
+
+        .rating {
+            margin-left: 10px;
+        }
+
+        .rating label {
+            margin-right: 12px;
+            font-family: sans-serif;
+        }
+
+        .yes-no {
+            margin-left: 8px;
+            font-family: sans-serif;
+        }
+
+        .yes-no label {
+            margin-right: 15px;
+        }
+
+        .underline {
+            border-bottom: 1px solid black;
+            padding-bottom: 2px;
+            display: inline-block;
+            width: 350px;
+        }
+
+        .feedback-container .label-text {
+            display: inline-block;
+            width: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Model Shot Container -->
+        <div class="modelshot-container">
+            <img src="model_shot_main.png" alt="Model Shot" class="modelshot-image">
+        </div>
+        <!-- Information Container -->
+        <div class="info-container">
+            <!-- Top View Container -->
+            <div class="topview-container">
+                <img src="model_shot_top.png" alt="Top View" class="topview-image">
+                <img src="Compass.png" alt="Compass" class="compass">
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>Cable Number</th>
+                        <td>101-1A02-JBA-006-XAI-2</td>
+                    </tr>
+                    <tr>
+                        <th>Source Tag</th>
+                        <td>101-1A02-JBA-006</td>
+                    </tr>
+                    <tr>
+                        <th>Source Description</th>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <th>Destination Tag</th>
+                        <td>101-ICP-001G</td>
+                    </tr>
+                    <tr>
+                        <th>Destination Description</th>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <th>Cable Description</th>
+                        <td>16 Pr #20 AWG</td>
+                    </tr>
+                    <tr>
+                        <th>Cable Type</th>
+                        <td>L216</td>
+                    </tr>
+                    <tr>
+                        <th>Path Type</th>
+                        <td>Best</td>
+                    </tr>
+                    <tr>
+                        <th>Geometric Cable Length</th>
+                        <td>81.49819223825976</td>
+                    </tr>
+                    <tr>
+                        <th>Estimated Length</th>
+                        <td>84.08313333258894</td>
+                    </tr>
+                    <tr>
+                        <th>Route</th>
+                        <td>['101-ICT-060, 101-ICT-051, 101-ICT-057, 101-ICT-054, 101-ICT-052']</td>
+                    </tr>
+                    <tr>
+                        <th>Route Generation Date</th>
+                        <td>2025-01-21 19:44:48.855002</td>
+                    </tr>
+                    <tr>
+                        <th>Version</th>
+                        <td>1.0</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="feedback-container">
+                <h2>PILOT INSTALL FEEDBACK</h2>
+                <div class="rating-legend">(0 = Useless, 5 = Perfect)</div>
+                <p><span class="label-text">Quality of visual:</span>
+                    <span class="rating">
+                        <label>0 ☐</label>
+                        <label>1 ☐</label>
+                        <label>2 ☐</label>
+                        <label>3 ☐</label>
+                        <label>4 ☐</label>
+                        <label>5 ☐</label>
+                    </span>
+                </p>
+                <p><span class="label-text">Quality of routing:</span>
+                    <span class="rating">
+                        <label>0 ☐</label>
+                        <label>1 ☐</label>
+                        <label>2 ☐</label>
+                        <label>3 ☐</label>
+                        <label>4 ☐</label>
+                        <label>5 ☐</label>
+                    </span>
+                </p>
+                <p>Installed as routed <span class="yes-no">Yes ☐ No ☐</span></p>
+                <p><span class="label-text">Major Issues:</span> <span class="underline"></span></p>
+                <p><span class="label-text"></span> <span class="underline"></span></p>
+                <p><span class="label-text">Minor Issues:</span> <span class="underline"></span></p>
+                <p><span class="label-text"></span> <span class="underline"></span></p>
+                <p><span class="label-text">Sign-off:</span> <span class="underline"></span></p>
+                <p><span class="label-text">Role:</span> <span class="underline"></span></p>
+                <div class="feedback-qr-container">
+                    <img src="qr-code_feedback.png" alt="Feedback QR">
+                    <div class="qr-label">DETAILED FEEDBACK</div>
+                </div>
+            </div>
+
+        </div>
+        <!-- QR Code Containers -->
+        <div class="qr1-container">
+            <div class="qr-code">
+                <img src="qr-code_rev.png" alt="QR Code 1">
+            </div>
+            <div class="qr-label">REV-CHECK</div>
+        </div>
+        <div class="qr2-container">
+            <div class="qr-code">
+                <img src="qr-code_mini.png" alt="QR Code 2">
+            </div>
+            <div class="qr-label">MINI-MODEL</div>
+        </div>
+    </div>
+</body>
+
+</html>

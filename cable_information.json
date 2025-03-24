@@ -1,0 +1,17 @@
+{
+    "CableNumber": "101-1A02-JBA-006-XAI-2",
+    "SourceTag": "101-1A02-JBA-006",
+    "SourceDescription": null,
+    "DestinationTag": "101-ICP-001G",
+    "DestinationDescription": null,
+    "CableDescription": "16 Pr #20 AWG",
+    "CableType": "L216",
+    "Route": [
+        "101-ICT-060, 101-ICT-051, 101-ICT-057, 101-ICT-054, 101-ICT-052"
+    ],
+    "PathType": "Best",
+    "ExpectedPullLength": 84.08313333258894,
+    "GeometricLength": 81.49819223825976,
+    "DateProcessed": "2025-01-21 19:44:48.855002",
+    "VersionNumber": "1.0"
+}
