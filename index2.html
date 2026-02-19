@@ -207,6 +207,10 @@
           <input type="checkbox" id="greyscale">
           <label for="greyscale">Greyscale</label>
         </div>
+        <div class="setting-row">
+          <input type="checkbox" id="deviceOrientation">
+          <label for="deviceOrientation">Device Orientation (gyro)</label>
+        </div>
       </div>
 
     </div>
@@ -266,6 +270,64 @@
     // Greyscale toggle
     document.getElementById('greyscale').addEventListener('change', e => {
       mv.style.filter = e.target.checked ? 'grayscale(100%)' : '';
+    });
+
+    // Device Orientation — map gyro to model-viewer cameraOrbit
+    let orientationEnabled = false;
+    let baseAlpha = null;  // captured on enable so "current heading" = centre
+    let baseBeta  = null;
+
+    function onDeviceOrientation(e) {
+      if (!orientationEnabled) return;
+      const alpha = e.alpha || 0; // compass heading
+      const beta  = e.beta  || 0; // front-back tilt
+      const gamma = e.gamma || 0; // left-right tilt
+
+      // Capture initial pose so the model stays centred when you enable
+      if (baseAlpha === null) { baseAlpha = alpha; baseBeta = beta; }
+
+      // Delta from initial pose → orbit angles
+      // theta = horizontal orbit (0-360 deg); phi = vertical orbit (0-180 deg)
+      let dAlpha = alpha - baseAlpha;            // left-right
+      if (dAlpha > 180) dAlpha -= 360;
+      if (dAlpha < -180) dAlpha += 360;
+
+      const dBeta = beta - baseBeta;             // up-down
+
+      const theta = -dAlpha;                     // invert so physical left = orbit left
+      const phi   = 75 - dBeta * 0.5;            // 75 deg is model-viewer's default
+      const clampedPhi = Math.max(0, Math.min(180, phi));
+
+      mv.cameraOrbit = `${theta}deg ${clampedPhi}deg auto`;
+    }
+
+    async function requestOrientationPermission() {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const state = await DeviceOrientationEvent.requestPermission();
+          return state === 'granted';
+        } catch { return false; }
+      }
+      return true;
+    }
+
+    document.getElementById('deviceOrientation').addEventListener('change', async (e) => {
+      if (e.target.checked) {
+        const granted = await requestOrientationPermission();
+        if (!granted) { e.target.checked = false; return; }
+        baseAlpha = null;
+        baseBeta  = null;
+        mv.removeAttribute('auto-rotate');      // pause auto-rotate while gyro active
+        mv.setAttribute('interaction-prompt', 'none');
+        window.addEventListener('deviceorientation', onDeviceOrientation);
+        orientationEnabled = true;
+      } else {
+        orientationEnabled = false;
+        window.removeEventListener('deviceorientation', onDeviceOrientation);
+        mv.setAttribute('auto-rotate', '');     // resume auto-rotate
+        mv.removeAttribute('interaction-prompt');
+      }
     });
   </script>
 
