@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebXR VR Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600&display=swap" rel="stylesheet">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js"
+    }
+  }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Barlow Condensed', sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    #back-link {
+      position: fixed;
+      top: 0.8em; left: 0.8em;
+      background: rgba(0,0,0,0.6);
+      color: #888;
+      text-decoration: none;
+      font-size: 0.85em;
+      padding: 0.3em 0.7em;
+      border: 1px solid #333;
+      z-index: 50;
+    }
+    #back-link:hover { color: #e0e0e0; border-color: #555; }
+
+    #info {
+      position: fixed;
+      bottom: 1.2em;
+      width: 100%;
+      text-align: center;
+      color: #555;
+      font-size: 0.9em;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+
+  <a id="back-link" href="index.html">&#8592; Viewers</a>
+  <div id="info">Use mouse to orbit &middot; Enter VR for immersive mode</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/webxr/VRButton.js';
+    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/controls/OrbitControls.js';
+
+    /* ---- Scene ---- */
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 1.6, 3);
+
+    /* ---- Renderer with WebXR ---- */
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    document.body.appendChild(renderer.domElement);
+
+    /* ---- VR button ---- */
+    const vrButton = VRButton.createButton(renderer);
+    document.body.appendChild(vrButton);
+
+    /* ---- Orbit controls (desktop / non-VR preview) ---- */
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.8, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.update();
+
+    /* ---- Lighting ---- */
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
+
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(3, 5, 3);
+    scene.add(dir);
+
+    const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+    fill.position.set(-3, 2, -2);
+    scene.add(fill);
+
+    /* ---- Ground ---- */
+    scene.add(new THREE.GridHelper(20, 40, 0x006400, 0x1a1a1a));
+
+    /* ---- Load model ---- */
+    const loader = new GLTFLoader();
+    loader.load(
+      'mini_model.glb',
+      gltf => {
+        const model = gltf.scene;
+        model.position.set(0, 0, 0);
+        scene.add(model);
+      },
+      undefined,
+      err => console.error('Model load error:', err)
+    );
+
+    /* ---- VR controller rays (optional grab-to-teleport indicator) ---- */
+    function addController(index) {
+      const ctrl = renderer.xr.getController(index);
+      scene.add(ctrl);
+
+      // Simple ray line
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -3)
+      ]);
+      const mat = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
+      ctrl.add(new THREE.Line(geo, mat));
+
+      return ctrl;
+    }
+
+    const controller0 = addController(0);
+    const controller1 = addController(1);
+
+    /* ---- Render loop ---- */
+    renderer.setAnimationLoop(() => {
+      if (!renderer.xr.isPresenting) {
+        controls.update();
+      }
+      renderer.render(scene, camera);
+    });
+
+    /* ---- Resize ---- */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

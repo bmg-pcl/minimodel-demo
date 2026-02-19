@@ -25,6 +25,8 @@ python -m http.server # Python
 |--------|------|--------------|--------------|
 | **Model Viewer + AR** | `index2.html` | Google Model Viewer with property sidebar, greyscale toggle, and gyroscope navigation. Tap the AR button to place the model on a real-world surface. | iOS or Android, modern browser |
 | **WebXR AR** | `ar-viewer.html` | Full immersive AR session via the WebXR Device API with surface hit-test, model nudge controls, camera feed overlay, and a splash screen. | Android + Chrome + ARCore, HTTPS |
+| **Google Cardboard** | `cardboard.html` | Stereoscopic split-screen viewer with gyroscope head tracking. Drop your phone into a Cardboard headset for hands-free 3D. | Phone with gyroscope, Cardboard-style headset |
+| **WebXR VR** | `vr-viewer.html` | Immersive-vr session for standalone headsets (Quest, Pico, etc.). Orbit controls on desktop; controller rays in VR. | WebXR VR headset or desktop browser, HTTPS |
 | **Marker AR** | `ar.html` | A-Frame + AR.js marker-based viewer. Point the camera at the printed marker pattern to anchor the model. | Printed `custom-marker.patt` |
 | **HoloLens** | `hololens/holoviewer.html` | Three.js scene rendered through the HoloJS runtime for holographic display. | Microsoft HoloLens + HoloJS |
 
@@ -65,6 +67,8 @@ minimodel-demo/
 ├── index.html                          Landing page (viewer menu)
 ├── index2.html                         Model Viewer + AR (recommended)
 ├── ar-viewer.html                      WebXR immersive AR viewer
+├── cardboard.html                      Google Cardboard stereoscopic viewer
+├── vr-viewer.html                      WebXR VR headset viewer
 ├── ar.html                             Marker-based AR (A-Frame + AR.js)
 ├── arj2.html                           Marker-based AR (alternate)
 ├── pull_card.html                      Printable installation pull card
@@ -95,7 +99,7 @@ Three versions of the model are included at different fidelity levels:
 | File | Size | Used by |
 |------|------|---------|
 | `Mini-Model-2-7213-74-3500-S02.glb` | 19 MB | `index2.html`, `spa-static-minimodel.html` |
-| `mini_model.glb` | 12 MB | `ar-viewer.html` |
+| `mini_model.glb` | 12 MB | `ar-viewer.html`, `cardboard.html`, `vr-viewer.html` |
 | `compressed.glb` | 981 KB | `ar.html`, `arj2.html`, `hololens/holoviewer.html` |
 
 ## Technologies
@@ -116,12 +120,14 @@ The site is deployed as a static site on **GitHub Pages** from the default branc
 
 ## Browser support
 
-| Feature | Chrome (Android) | Safari (iOS) | Chrome (Desktop) | Edge (HoloLens) |
-|---------|:-:|:-:|:-:|:-:|
-| 3D model viewing | Yes | Yes | Yes | Yes |
-| AR placement | Yes (WebXR + Scene Viewer) | Yes (Quick Look) | — | Holographic |
-| Device orientation | Yes | Yes (permission prompt) | — | — |
-| Marker AR | Yes | Yes | Yes | — |
+| Feature | Chrome (Android) | Safari (iOS) | Chrome (Desktop) | Quest / Pico | HoloLens |
+|---------|:-:|:-:|:-:|:-:|:-:|
+| 3D model viewing | Yes | Yes | Yes | Yes | Yes |
+| AR placement | Yes (WebXR + Scene Viewer) | Yes (Quick Look) | — | — | Holographic |
+| Google Cardboard | Yes | Yes | — | — | — |
+| WebXR VR | Yes | — | Yes (no headset) | Yes | — |
+| Device orientation | Yes | Yes (permission prompt) | — | — | — |
+| Marker AR | Yes | Yes | Yes | — | — |
 
 ## License
 

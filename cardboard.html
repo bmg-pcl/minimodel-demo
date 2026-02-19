@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Google Cardboard Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600&display=swap" rel="stylesheet">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js"
+    }
+  }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Barlow Condensed', sans-serif;
+      background: #000;
+      color: #e0e0e0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      text-align: center;
+      padding: 2em;
+    }
+    #overlay h2 {
+      color: #FFD700;
+      font-size: 1.6em;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.6em;
+    }
+    #overlay p {
+      color: #999;
+      max-width: 320px;
+      line-height: 1.5;
+      margin-bottom: 1.5em;
+    }
+    #startBtn {
+      background: #006400;
+      color: #FFD700;
+      border: none;
+      padding: 0.8em 2em;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1em;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+    }
+    #startBtn:active { background: #008000; }
+
+    #back-link {
+      position: fixed;
+      top: 0.6em; left: 0.6em;
+      background: rgba(0,0,0,0.5);
+      color: #888;
+      text-decoration: none;
+      font-size: 0.8em;
+      padding: 0.3em 0.6em;
+      border: 1px solid #333;
+      z-index: 50;
+    }
+
+    canvas { display: block; }
+
+    /* Divider line down the centre for stereo mode */
+    #divider {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 100%;
+      background: #333;
+      z-index: 10;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <a id="back-link" href="index.html">&#8592; Viewers</a>
+  <div id="divider"></div>
+
+  <!-- Tap-to-start overlay (user gesture needed for orientation permission + fullscreen) -->
+  <div id="overlay">
+    <h2>Google Cardboard</h2>
+    <p>Place your phone in a Cardboard headset. Tap the button below to enter stereoscopic mode with head tracking.</p>
+    <button id="startBtn">Enter VR</button>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { StereoEffect } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/effects/StereoEffect.js';
+    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/loaders/GLTFLoader.js';
+
+    /* ---- Scene setup ---- */
+    const scene  = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 1.6, 3); // approximate standing eye height
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const effect = new StereoEffect(renderer);
+    effect.setEyeSeparation(0.064); // average IPD ~64 mm
+    effect.setSize(window.innerWidth, window.innerHeight);
+
+    /* ---- Lighting ---- */
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(3, 5, 3);
+    scene.add(dir);
+
+    /* ---- Ground grid ---- */
+    scene.add(new THREE.GridHelper(20, 40, 0x006400, 0x222222));
+
+    /* ---- Load model ---- */
+    const loader = new GLTFLoader();
+    loader.load(
+      'mini_model.glb',
+      gltf => {
+        const model = gltf.scene;
+        model.position.set(0, 0, -1);
+        scene.add(model);
+      },
+      undefined,
+      err => console.error('Model load error:', err)
+    );
+
+    /* ---- Device orientation head tracking ---- */
+    const DEG2RAD = Math.PI / 180;
+    let orientationReady = false;
+    let deviceAlpha = 0, deviceBeta = 0, deviceGamma = 0;
+
+    function onOrientation(e) {
+      deviceAlpha = e.alpha || 0;
+      deviceBeta  = e.beta  || 0;
+      deviceGamma = e.gamma || 0;
+      orientationReady = true;
+    }
+
+    function applyOrientation() {
+      if (!orientationReady) return;
+
+      const alpha = deviceAlpha * DEG2RAD;
+      const beta  = deviceBeta  * DEG2RAD;
+      const gamma = deviceGamma * DEG2RAD;
+
+      // ZXY Euler → quaternion (W3C device orientation spec)
+      const euler = new THREE.Euler(beta, alpha, -gamma, 'YXZ');
+      camera.quaternion.setFromEuler(euler);
+
+      // Rotate -90 deg on X so "phone upright" = looking forward
+      const adjust = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+      camera.quaternion.multiply(adjust);
+
+      // Screen orientation correction
+      const orient = window.orientation || 0;
+      const screenQ = new THREE.Quaternion();
+      screenQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -orient * DEG2RAD);
+      camera.quaternion.multiply(screenQ);
+    }
+
+    /* ---- Render loop ---- */
+    let stereoActive = false;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      applyOrientation();
+      if (stereoActive) {
+        effect.render(scene, camera);
+      } else {
+        renderer.render(scene, camera);
+      }
+    }
+    animate();
+
+    /* ---- Resize ---- */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      effect.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ---- Start button (user gesture) ---- */
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      // Request orientation permission (iOS 13+)
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const state = await DeviceOrientationEvent.requestPermission();
+          if (state !== 'granted') {
+            alert('Device orientation permission is required for Cardboard VR.');
+            return;
+          }
+        } catch (err) {
+          console.error('Orientation permission error:', err);
+          return;
+        }
+      }
+
+      window.addEventListener('deviceorientation', onOrientation);
+
+      // Enter fullscreen + landscape
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape-primary').catch(() => {});
+      }
+
+      stereoActive = true;
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('divider').style.display = 'block';
+      document.getElementById('back-link').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
