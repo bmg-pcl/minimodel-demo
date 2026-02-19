@@ -221,6 +221,13 @@
           Camera Off (hide camera capture)
         </label>
       </div>
+      <!-- Device Orientation -->
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="deviceOrientation">
+          Device Orientation (gyro)
+        </label>
+      </div>
       <!-- Dark Mode toggle -->
       <div class="control-group">
         <label>
@@ -528,6 +535,85 @@
       } else {
         document.body.classList.remove('dark-mode');
         document.body.classList.add('light-mode');
+      }
+    });
+
+    /* --- Device Orientation Controls --- */
+    let orientationEnabled = false;
+    let orientationData = { alpha: 0, beta: 0, gamma: 0 };
+    const DEG2RAD = Math.PI / 180;
+
+    function onDeviceOrientation(e) {
+      if (!orientationEnabled) return;
+      orientationData.alpha = e.alpha || 0; // compass heading (Z)
+      orientationData.beta  = e.beta  || 0; // front-back tilt (X)
+      orientationData.gamma = e.gamma || 0; // left-right tilt (Y)
+    }
+
+    // Apply device orientation to camera using the W3C spec convention:
+    // alpha = Z rotation, beta = X rotation, gamma = Y rotation
+    // with a screen-orientation correction.
+    function applyDeviceOrientation() {
+      if (!orientationEnabled || !camera) return;
+
+      const alpha = orientationData.alpha * DEG2RAD; // Z
+      const beta  = orientationData.beta  * DEG2RAD; // X
+      const gamma = orientationData.gamma * DEG2RAD; // Y
+
+      // Build quaternion: ZXY Euler order (device convention)
+      const euler = new THREE.Euler(beta, alpha, -gamma, 'YXZ');
+      camera.quaternion.setFromEuler(euler);
+
+      // Rotate by -90 degrees on X to align "forward" with the ground plane
+      const screenAdjust = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+      camera.quaternion.multiply(screenAdjust);
+
+      // Correct for current screen orientation (landscape vs portrait)
+      const orient = window.orientation || 0;
+      const screenRotation = new THREE.Quaternion();
+      screenRotation.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -orient * DEG2RAD);
+      camera.quaternion.multiply(screenRotation);
+    }
+
+    // Inject into the existing render loop
+    const _originalRender = render;
+    function render() {
+      applyDeviceOrientation();
+      renderer.render(scene, camera);
+    }
+    renderer.setAnimationLoop(render);
+
+    async function requestOrientationPermission() {
+      // iOS 13+ requires a permission prompt triggered by user gesture
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const state = await DeviceOrientationEvent.requestPermission();
+          if (state !== 'granted') {
+            console.warn('Device orientation permission denied.');
+            return false;
+          }
+        } catch (err) {
+          console.error('Error requesting orientation permission:', err);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    document.getElementById('deviceOrientation').addEventListener('change', async (e) => {
+      if (e.target.checked) {
+        const granted = await requestOrientationPermission();
+        if (!granted) { e.target.checked = false; return; }
+        window.addEventListener('deviceorientation', onDeviceOrientation);
+        orientationEnabled = true;
+        console.log('Device orientation enabled.');
+      } else {
+        orientationEnabled = false;
+        window.removeEventListener('deviceorientation', onDeviceOrientation);
+        // Reset camera to default forward-looking orientation
+        camera.quaternion.identity();
+        console.log('Device orientation disabled.');
       }
     });
   </script>
