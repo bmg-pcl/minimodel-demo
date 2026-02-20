@@ -48,12 +48,162 @@
     }
 
     canvas { display: block; }
+
+    /* ---- Sidebar toggle button (shown when sidebar closed) ---- */
+    #toggle-sidebar {
+      position: fixed;
+      top: 0.8em; right: 0.8em;
+      background: #006400;
+      color: #FFD700;
+      border: none;
+      padding: 0.5em 1em;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      z-index: 200;
+      display: none;
+    }
+
+    /* ---- Sidebar ---- */
+    #sidebar {
+      position: fixed;
+      top: 0; right: 0;
+      width: 280px;
+      height: 100%;
+      background: rgba(20,20,20,0.95);
+      border-left: 2px solid #2a2a2a;
+      z-index: 190;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease;
+      transform: translateX(0);
+      overflow: hidden;
+    }
+    #sidebar.hidden {
+      transform: translateX(100%);
+    }
+    .sidebar-header {
+      background: #006400;
+      color: #FFD700;
+      padding: 0.8em 1em;
+      font-size: 1.1em;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .sidebar-header button {
+      background: none;
+      border: none;
+      color: #FFD700;
+      cursor: pointer;
+      font-size: 1.1em;
+      padding: 0;
+      line-height: 1;
+    }
+    .sidebar-header button:hover { color: #fff; }
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1em;
+    }
+    .sidebar-scroll h4 {
+      color: #FFD700;
+      margin: 0 0 0.7em 0;
+      font-size: 0.95em;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .prop-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5em;
+      margin-bottom: 0.45em;
+      font-size: 0.95em;
+      color: #e0e0e0;
+    }
+    .prop-key { color: #888; flex: 1; }
+    .prop-val { flex: 1.6; text-align: right; word-break: break-word; }
+    .prop-val a { color: #bb86fc; }
   </style>
 </head>
 <body>
 
   <a id="back-link" href="index.html">&#8592; Viewers</a>
   <div id="info">Use mouse to orbit &middot; Enter VR for immersive mode</div>
+
+  <!-- Sidebar toggle (shown when sidebar closed) -->
+  <button id="toggle-sidebar">Properties</button>
+
+  <!-- Properties sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <span>Properties</span>
+      <button id="close-sidebar" title="Close sidebar">&#10005;</button>
+    </div>
+    <div class="sidebar-scroll">
+      <h4>Asset Info</h4>
+      <div id="properties"><em style="color:#555">Loading&hellip;</em></div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var sidebar  = document.getElementById('sidebar');
+      var toggleBtn = document.getElementById('toggle-sidebar');
+      var closeBtn  = document.getElementById('close-sidebar');
+
+      function openSidebar() {
+        sidebar.classList.remove('hidden');
+        toggleBtn.style.display = 'none';
+      }
+      function closeSidebar() {
+        sidebar.classList.add('hidden');
+        toggleBtn.style.display = '';
+      }
+
+      toggleBtn.addEventListener('click', openSidebar);
+      closeBtn.addEventListener('click', closeSidebar);
+      openSidebar();
+
+      fetch('cable_information.json')
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(r.statusText); })
+        .then(function(data) {
+          var div = document.getElementById('properties');
+          div.innerHTML = '';
+          for (var key in data) {
+            if (!data.hasOwnProperty(key)) continue;
+            var value = data[key];
+            var row = document.createElement('div');
+            row.className = 'prop-row';
+            var display;
+            if (value === null || value === undefined) {
+              display = '<span style="color:#444">\u2014</span>';
+            } else if (Array.isArray(value)) {
+              display = value.join(', ');
+            } else if (typeof value === 'object') {
+              display = (value.HREF && value.A)
+                ? '<a href="' + value.HREF + '" target="_blank" rel="noopener">' + value.A + '</a>'
+                : JSON.stringify(value);
+            } else if (typeof value === 'number') {
+              display = Number.isInteger(value) ? value : value.toFixed(2);
+            } else {
+              display = value;
+            }
+            row.innerHTML = '<span class="prop-key">' + key + '</span><span class="prop-val">' + display + '</span>';
+            div.appendChild(row);
+          }
+        })
+        .catch(function() {
+          document.getElementById('properties').innerHTML =
+            '<em style="color:#555">No properties found.</em>';
+        });
+    })();
+  </script>
 
   <script type="module">
     import * as THREE from 'three';

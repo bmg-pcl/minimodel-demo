@@ -28,6 +28,12 @@
       margin-bottom: 2.5em;
       font-size: 1.1em;
     }
+    .subtitle a {
+      color: #888;
+      text-decoration: none;
+      border-bottom: 1px solid #444;
+    }
+    .subtitle a:hover { color: #00FF00; border-color: #00FF00; }
     .viewer-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -84,18 +90,11 @@
       color: #555;
     }
     .req span { color: #777; }
-    footer {
-      margin-top: 2.5em;
-      font-size: 0.82em;
-      color: #444;
-    }
-    footer a { color: #555; text-decoration: none; border-bottom: 1px solid #333; }
-    footer a:hover { color: #888; border-color: #555; }
   </style>
 </head>
 <body>
   <h1>XR Digital Constructability</h1>
-  <p class="subtitle">Select a viewer mode.</p>
+  <p class="subtitle">Select a viewer mode. &nbsp;&middot;&nbsp; <a href="https://github.com/bmg-pcl/minimodel-demo#readme" target="_blank" rel="noopener">README &amp; docs</a></p>
 
   <div class="viewer-grid">
 
@@ -143,8 +142,5 @@
 
   </div>
 
-  <footer>
-    <a href="https://github.com/bmg-pcl/minimodel-demo#readme" target="_blank" rel="noopener">README &amp; docs &rarr;</a>
-  </footer>
 </body>
 </html>
