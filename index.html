@@ -28,6 +28,12 @@
       margin-bottom: 2.5em;
       font-size: 1.1em;
     }
+    .subtitle a {
+      color: #888;
+      text-decoration: none;
+      border-bottom: 1px solid #444;
+    }
+    .subtitle a:hover { color: #00FF00; border-color: #00FF00; }
     .viewer-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -70,6 +76,8 @@
     .tag.webxr       { background: #1a1a4e; border: 1px solid #5555ff; color: #8888ff; }
     .tag.marker      { background: #3d2600; border: 1px solid #cc7700; color: #ffaa33; }
     .tag.hololens    { background: #001a33; border: 1px solid #0077cc; color: #33aaff; }
+    .tag.cardboard   { background: #2d1a00; border: 1px solid #cc6600; color: #ff9933; }
+    .tag.vr          { background: #1a003d; border: 1px solid #8833ff; color: #aa66ff; }
     .viewer-card p {
       margin: 0 0 0.6em 0;
       color: #aaa;
@@ -86,7 +94,7 @@
 </head>
 <body>
   <h1>XR Digital Constructability</h1>
-  <p class="subtitle">Select a viewer mode.</p>
+  <p class="subtitle">Select a viewer mode. &nbsp;&middot;&nbsp; <a href="https://github.com/bmg-pcl/minimodel-demo#readme" target="_blank" rel="noopener">README &amp; docs</a></p>
 
   <div class="viewer-grid">
 
@@ -111,6 +119,20 @@
       <p class="req">Requires: <span>Custom marker pattern (custom-marker.patt)</span></p>
     </a>
 
+    <a class="viewer-card" href="cardboard.html">
+      <div class="tag cardboard">Cardboard</div>
+      <h3>Google Cardboard</h3>
+      <p>Stereoscopic split-screen viewer with gyroscope head tracking. Drop your phone into a Cardboard headset for an immersive 3D experience — no headset pairing required.</p>
+      <p class="req">Requires: <span>Phone with gyroscope, Cardboard-style headset</span></p>
+    </a>
+
+    <a class="viewer-card" href="vr-viewer.html">
+      <div class="tag vr">WebXR VR</div>
+      <h3>VR Headset Viewer</h3>
+      <p>Full WebXR immersive-vr session for standalone and tethered headsets. Orbit controls on desktop; controller rays in VR. Supports Meta Quest, Pico, and similar devices.</p>
+      <p class="req">Requires: <span>WebXR-capable VR headset or desktop browser, HTTPS</span></p>
+    </a>
+
     <a class="viewer-card" href="hololens/holoviewer.html">
       <div class="tag hololens">HoloLens</div>
       <h3>HoloLens Viewer</h3>
@@ -119,5 +141,6 @@
     </a>
 
   </div>
+
 </body>
 </html>
