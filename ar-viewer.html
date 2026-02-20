@@ -109,14 +109,21 @@
       position: fixed;
       top: 1em;
       right: 1em;
+      width: 2.2em;
+      height: 2.2em;
       background-color: #006400;
       color: #FFD700;
       border: none;
-      padding: 0.5em 1em;
+      border-radius: 50%;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1em;
+      font-weight: bold;
       z-index: 210;
       cursor: pointer;
-      transition: opacity 0.3s ease;
+      line-height: 1;
+      text-align: center;
     }
+    .toggle-sidebar:hover { background-color: #008800; }
     /* Hide Options button when sidebar is open */
     #sidebar.open ~ .toggle-sidebar {
       display: none;
@@ -164,7 +171,7 @@
   <div id="ar-container"></div>
   
   <!-- Sidebar toggle button -->
-  <button class="toggle-sidebar" id="toggleSidebar">Options</button>
+  <button class="toggle-sidebar" id="toggleSidebar" title="Open Properties">P</button>
   
   <!-- Sidebar -->
   <div id="sidebar">

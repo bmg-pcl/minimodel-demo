@@ -53,18 +53,22 @@
       position: fixed;
       top: 1em;
       right: 1em;
+      width: 2.2em;
+      height: 2.2em;
       background: #006400;
       color: #FFD700;
       border: none;
-      padding: 0.5em 1em;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 1em;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      border-radius: 50%;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1em;
+      font-weight: bold;
       cursor: pointer;
       z-index: 200;
-      display: none; /* hidden while sidebar is open */
+      display: none; /* shown via JS when sidebar closes */
+      line-height: 1;
+      text-align: center;
     }
+    #toggle-sidebar:hover { background: #008800; }
 
     /* ---- Sidebar ---- */
     #sidebar {
@@ -184,7 +188,7 @@
   </div>
 
   <!-- Toggle button (shown when sidebar is closed) -->
-  <button id="toggle-sidebar">Properties</button>
+  <button id="toggle-sidebar" title="Open Properties">P</button>
 
   <!-- Sidebar -->
   <div id="sidebar">
@@ -228,7 +232,7 @@
     }
     function closeSidebar() {
       sidebar.classList.add('hidden');
-      toggleBtn.style.display = '';
+      toggleBtn.style.display = 'block';
     }
 
     toggleBtn.addEventListener('click', openSidebar);
