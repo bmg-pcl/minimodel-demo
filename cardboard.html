@@ -194,7 +194,7 @@
   <!-- Tap-to-start overlay (user gesture needed for orientation permission + fullscreen) -->
   <div id="overlay">
     <h2>Google Cardboard</h2>
-    <p>Place your phone in a Cardboard headset. Tap the button below to enter stereoscopic mode with head tracking.</p>
+    <p>Place your phone in a Cardboard headset. Look around with head tracking; tap the screen (or Cardboard trigger) to orbit around the model.</p>
     <button id="startBtn">Enter VR</button>
   </div>
 
@@ -268,7 +268,7 @@
     scene.background = new THREE.Color(0x111111);
 
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
-    camera.position.set(0, 1.6, 3); // approximate standing eye height
+    // Initial position set by updateCameraOrbit() below
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -334,6 +334,32 @@
       screenQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -orient * DEG2RAD);
       camera.quaternion.multiply(screenQ);
     }
+
+    /* ---- Orbit navigation (tap to rotate around model) ---- */
+    const orbitTarget = new THREE.Vector3(0, 0, -1); // model centre
+    const orbitRadius = 4;    // distance from model
+    const orbitHeight = 1.6;  // eye height
+    let   orbitAngle  = 0;    // current angle in radians (starts behind model)
+
+    function updateCameraOrbit() {
+      camera.position.set(
+        orbitTarget.x + orbitRadius * Math.sin(orbitAngle),
+        orbitHeight,
+        orbitTarget.z + orbitRadius * Math.cos(orbitAngle)
+      );
+    }
+    updateCameraOrbit(); // set initial position
+
+    const ORBIT_STEP = Math.PI / 12; // 15 degrees per tap
+
+    // Tap / click / Cardboard trigger → step orbit
+    function onOrbitTap() {
+      if (!stereoActive) return;
+      orbitAngle += ORBIT_STEP;
+      updateCameraOrbit();
+    }
+    window.addEventListener('click', onOrbitTap);
+    window.addEventListener('touchend', onOrbitTap);
 
     /* ---- Render loop ---- */
     let stereoActive = false;

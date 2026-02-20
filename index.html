@@ -90,6 +90,22 @@
       color: #555;
     }
     .req span { color: #777; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      margin-top: 0.6em;
+    }
+    .chip {
+      display: inline-block;
+      font-size: 0.7em;
+      padding: 0.15em 0.5em;
+      border: 1px solid #333;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .chip.oss { border-color: #006400; color: #4a4; }
   </style>
 </head>
 <body>
@@ -103,6 +119,12 @@
       <h3>Model Viewer + AR</h3>
       <p>Google Model Viewer with property sidebar and greyscale option. Tap the AR button to place the model on a real-world surface — no marker needed.</p>
       <p class="req">Requires: <span>iOS or Android, modern browser</span></p>
+      <div class="meta">
+        <span class="chip">iOS Safari</span>
+        <span class="chip">Android Chrome</span>
+        <span class="chip">Desktop</span>
+        <span class="chip oss">OSS &middot; Apache 2.0</span>
+      </div>
     </a>
 
     <a class="viewer-card" href="ar-viewer.html">
@@ -110,6 +132,11 @@
       <h3>WebXR AR Viewer</h3>
       <p>Full WebXR immersive AR session using surface hit-test. Includes a property sidebar, model nudge controls, and a splash screen on launch.</p>
       <p class="req">Requires: <span>Android + Chrome + ARCore, HTTPS</span></p>
+      <div class="meta">
+        <span class="chip">Android Chrome</span>
+        <span class="chip">Quest 3 (passthrough)</span>
+        <span class="chip oss">OSS &middot; MIT</span>
+      </div>
     </a>
 
     <a class="viewer-card" href="ar.html">
@@ -117,13 +144,24 @@
       <h3>Marker-Based AR</h3>
       <p>AR.js viewer anchored to a physical marker pattern. Broader browser compatibility than WebXR — no ARCore required, but a printed marker is needed.</p>
       <p class="req">Requires: <span>Custom marker pattern (custom-marker.patt)</span></p>
+      <div class="meta">
+        <span class="chip">iOS Safari</span>
+        <span class="chip">Android Chrome</span>
+        <span class="chip">Firefox</span>
+        <span class="chip oss">OSS &middot; MIT</span>
+      </div>
     </a>
 
     <a class="viewer-card" href="cardboard.html">
       <div class="tag cardboard">Cardboard</div>
       <h3>Google Cardboard</h3>
-      <p>Stereoscopic split-screen viewer with gyroscope head tracking. Drop your phone into a Cardboard headset for an immersive 3D experience — no headset pairing required.</p>
+      <p>Stereoscopic split-screen viewer with gyroscope head tracking. Tap the screen to orbit around the model. Drop your phone into a Cardboard headset — no pairing required.</p>
       <p class="req">Requires: <span>Phone with gyroscope, Cardboard-style headset</span></p>
+      <div class="meta">
+        <span class="chip">iOS Safari</span>
+        <span class="chip">Android Chrome</span>
+        <span class="chip oss">OSS &middot; MIT</span>
+      </div>
     </a>
 
     <a class="viewer-card" href="vr-viewer.html">
@@ -131,6 +169,12 @@
       <h3>VR Headset Viewer</h3>
       <p>Full WebXR immersive-vr session for standalone and tethered headsets. Orbit controls on desktop; controller rays in VR. Supports Meta Quest, Pico, and similar devices.</p>
       <p class="req">Requires: <span>WebXR-capable VR headset or desktop browser, HTTPS</span></p>
+      <div class="meta">
+        <span class="chip">Meta Quest 2/3/Pro</span>
+        <span class="chip">Pico</span>
+        <span class="chip">Desktop (preview)</span>
+        <span class="chip oss">OSS &middot; MIT</span>
+      </div>
     </a>
 
     <a class="viewer-card" href="hololens/holoviewer.html">
@@ -138,6 +182,11 @@
       <h3>HoloLens Viewer</h3>
       <p>Holographic display via HoloJS and Three.js. Open in the HoloLens Edge browser or deploy through the HoloJS runtime.</p>
       <p class="req">Requires: <span>Microsoft HoloLens + HoloJS</span></p>
+      <div class="meta">
+        <span class="chip">HoloLens 1/2</span>
+        <span class="chip">Edge (HoloLens)</span>
+        <span class="chip oss">OSS &middot; MIT (archived)</span>
+      </div>
     </a>
 
   </div>
